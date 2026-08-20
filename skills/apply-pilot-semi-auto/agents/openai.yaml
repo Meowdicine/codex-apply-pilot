@@ -1,0 +1,6 @@
+interface:
+  display_name: "Apply Pilot 半自动申请"
+  short_description: "以简历审核和提交审核两道 Gate 安全推进单个申请"
+  default_prompt: "请使用 $apply-pilot-semi-auto 通过两道候选绑定 Gate 暂存这个准确申请。"
+policy:
+  allow_implicit_invocation: true

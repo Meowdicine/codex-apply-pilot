@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="drawio" version="26.0.0" modified="1970-01-01T00:00:00.000Z" agent="codex-apply-pilot">
+  <diagram name="系统架构">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1420" pageHeight="820" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="Codex Apply Pilot｜本地优先架构" style="text;html=1;align=left;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#111827;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="700" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="用户&#xa;事实确认与安全动作" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="50" y="310" width="190" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="Codex Plugin + CLI&#xa;问卷、策略、状态机" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontColor=#1f2937;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="330" y="290" width="240" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="Simplify 官方 UI&#xa;Copilot / Resume Builder" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#1f2937;fontSize=14;dashed=1;dashPattern=8 4;" vertex="1" parent="1">
+          <mxGeometry x="330" y="90" width="240" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="本地状态与回执&#xa;无秘密、原子写入" style="shape=cylinder3;boundedLbl=1;backgroundOutline=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="670" y="100" width="220" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="OS Credential Store&#xa;只保存 secretRef" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;fontColor=#1f2937;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="330" y="540" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="已验证条款的雇主门户&#xa;候选级适配器" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#1f2937;fontSize=14;dashed=1;dashPattern=8 4;" vertex="1" parent="1">
+          <mxGeometry x="1040" y="310" width="270" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="9" value="官方成功回执&#xa;或 unknown no-repeat" style="rounded=1;arcSize=12;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontColor=#1f2937;fontSize=14;" vertex="1" parent="1">
+          <mxGeometry x="670" y="540" width="220" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="明确事实与模式选择" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#6c8ebf;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="3" target="4">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="11" value="策略 / CAS / 审计" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="4" target="6">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="12" value="仅使用引用" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#9673a6;strokeWidth=2;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="4" target="7">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="13" value="官方界面操作" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;dashed=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="3" target="5">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="14" value="用户确认的产物" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#666666;strokeWidth=2;dashed=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="5" target="4">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="15" value="允许域名 + 精确候选" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#d79b00;strokeWidth=2;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="4" target="8">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="16" value="一次最终点击" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;strokeWidth=2;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="8" target="9">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="17" value="验证或安全停车" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#82b366;strokeWidth=2;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="9" target="6">
+          <mxGeometry relative="1" as="geometry"></mxGeometry>
+        </mxCell>
+        <mxCell id="18" value="图例" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;strokeColor=#6b7280;verticalAlign=top;fontStyle=1;fontColor=#374151;container=1;pointerEvents=0;" vertex="1" parent="1">
+          <mxGeometry x="1190" y="666" width="200" height="142" as="geometry" />
+        </mxCell>
+        <mxCell id="19" value="" style="rounded=0;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="18">
+          <mxGeometry x="10" y="30" width="30" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="本地模块" style="text;html=1;align=left;verticalAlign=middle;fontColor=#374151;fontSize=12;" vertex="1" parent="18">
+          <mxGeometry x="50" y="28" width="135" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="21" value="" style="rounded=0;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="18">
+          <mxGeometry x="10" y="56" width="30" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="22" value="秘密或安全边界" style="text;html=1;align=left;verticalAlign=middle;fontColor=#374151;fontSize=12;" vertex="1" parent="18">
+          <mxGeometry x="50" y="54" width="135" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="" style="rounded=0;html=1;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="18">
+          <mxGeometry x="10" y="82" width="30" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="24" value="第三方系统" style="text;html=1;align=left;verticalAlign=middle;fontColor=#374151;fontSize=12;" vertex="1" parent="18">
+          <mxGeometry x="50" y="80" width="135" height="20" as="geometry" />
+        </mxCell>
+        <mxCell id="25" value="" style="rounded=0;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="18">
+          <mxGeometry x="10" y="108" width="30" height="16" as="geometry" />
+        </mxCell>
+        <mxCell id="26" value="已验证结果" style="text;html=1;align=left;verticalAlign=middle;fontColor=#374151;fontSize=12;" vertex="1" parent="18">
+          <mxGeometry x="50" y="106" width="135" height="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

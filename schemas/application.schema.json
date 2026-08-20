@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Meowdicine/codex-apply-pilot/schemas/application.schema.json",
+  "title": "Apply Pilot application",
+  "type": "object",
+  "required": ["schemaVersion", "applicationId", "candidateId", "company", "role", "officialUrl", "mode", "state", "stateVersion", "submitAttemptCount", "events"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "applicationId": { "type": "string", "minLength": 8 },
+    "candidateId": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "company": { "type": "string", "minLength": 1 },
+    "role": { "type": "string", "minLength": 1 },
+    "officialUrl": { "type": "string", "pattern": "^https://" },
+    "mode": { "enum": ["semi-auto", "full-auto"] },
+    "state": { "type": "string", "minLength": 1 },
+    "stateVersion": { "type": "integer", "minimum": 0 },
+    "submitAttemptCount": { "type": "integer", "minimum": 0, "maximum": 1 },
+    "resumeVersionSha": { "type": ["string", "null"] },
+    "formSnapshotSha": { "type": ["string", "null"] },
+    "terminal": { "type": "boolean" },
+    "events": { "type": "array" }
+  },
+  "additionalProperties": true
+}

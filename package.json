@@ -1,0 +1,21 @@
+{
+  "name": "codex-apply-pilot",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chinese-first, local-first Codex workflow for semi-automated and bounded fully automated job applications.",
+  "type": "module",
+  "bin": {
+    "apply-pilot": "./scripts/apply-pilot.mjs"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check scripts/apply-pilot.mjs && node --check scripts/lib/state.mjs && node --check scripts/lib/questionnaire.mjs && node --check scripts/lib/readiness.mjs && node --check scripts/generate-diagrams.mjs",
+    "diagrams": "node scripts/generate-diagrams.mjs",
+    "privacy:scan": "node scripts/scan-repository.mjs",
+    "validate": "npm run check && npm test && npm run privacy:scan"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}

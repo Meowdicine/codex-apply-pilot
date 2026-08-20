@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "answers": [
+    {
+      "questionId": "preferences.role-families",
+      "value": ["software", "data", "infrastructure"],
+      "source": "user-explicit",
+      "sensitivity": "ordinary",
+      "automationPolicy": "auto-fill",
+      "verifiedAt": "2026-01-01T00:00:00.000Z",
+      "expiresAt": null
+    },
+    {
+      "questionId": "voluntary.demographics-default",
+      "value": "prefer-not-to-answer",
+      "source": "prefer-not-to-answer",
+      "sensitivity": "protected",
+      "automationPolicy": "auto-fill",
+      "verifiedAt": "2026-01-01T00:00:00.000Z",
+      "expiresAt": null
+    },
+    {
+      "questionId": "legal.sponsorship-required",
+      "value": null,
+      "source": "user-explicit",
+      "sensitivity": "legal-material",
+      "automationPolicy": "ask-until-verified",
+      "verifiedAt": "2026-01-01T00:00:00.000Z",
+      "expiresAt": null
+    }
+  ]
+}

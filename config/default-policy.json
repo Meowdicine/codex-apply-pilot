@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "mode": "semi-auto",
+  "defaultLaneCount": 1,
+  "maxLaneCount": 5,
+  "telemetry": false,
+  "officialSourceRequired": true,
+  "truthfulnessRequired": true,
+  "simplify": {
+    "mode": "guided-official-ui-only",
+    "allowDomAutomation": false,
+    "allowPrivateApi": false,
+    "allowScraping": false
+  },
+  "semiAuto": {
+    "resumeReviewGate": true,
+    "userOwnsNewAccountRegistration": true,
+    "finalSubmitGate": true
+  },
+  "fullAuto": {
+    "enabledByDefault": false,
+    "privateSelfHostedExperimental": true,
+    "minimumVerifiedSemiAutoSubmissions": 3,
+    "minimumApprovedResumeBaselines": 3,
+    "minimumDistinctResumeFamilies": 3,
+    "minimumDistinctPortalFamilies": 2,
+    "minimumDryRuns": 2,
+    "consentValidityDays": 30,
+    "defaultDailySubmitCap": 5,
+    "newPortalFallsBackToSemiAuto": true,
+    "hostConfirmationStillApplies": true
+  },
+  "hardStops": [
+    "captcha",
+    "cloudflare",
+    "otp-or-non-email-2fa",
+    "oauth-or-account-linking",
+    "password-reset",
+    "payment",
+    "contract",
+    "government-or-immigration-form",
+    "unsupported-material-fact",
+    "unknown-submit-state",
+    "site-terms-not-verified"
+  ]
+}

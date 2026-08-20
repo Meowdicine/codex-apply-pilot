@@ -1,0 +1,6 @@
+interface:
+  display_name: "Apply Pilot 简历"
+  short_description: "从不可变基准创建真实、候选绑定并通过 QA 的简历版本"
+  default_prompt: "请使用 $apply-pilot-resume 为这个准确的官方职位创建并审计真实的候选专用简历。"
+policy:
+  allow_implicit_invocation: true

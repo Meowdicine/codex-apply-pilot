@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "fullAutoConsent": {
+    "active": false,
+    "allowedDomains": [],
+    "dailySubmitCap": 5,
+    "validFrom": null,
+    "expiresAt": null,
+    "revokedAt": null
+  },
+  "capabilities": {
+    "osCredentialStoreReady": false,
+    "browserSmokeTestPassed": false,
+    "exactlyOnceRecoveryTestPassed": false,
+    "dryRunsPassed": 0
+  }
+}

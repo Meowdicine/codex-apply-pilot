@@ -1,0 +1,6 @@
+interface:
+  display_name: "Apply Pilot 初始化"
+  short_description: "初始化本地问卷、简历基准并引导配置 Simplify Profile"
+  default_prompt: "请使用 $apply-pilot-onboarding 初始化我的本地预设，并安全引导我完成 Simplify Profile。"
+policy:
+  allow_implicit_invocation: true

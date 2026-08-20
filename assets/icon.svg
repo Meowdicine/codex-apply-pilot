@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Codex Apply Pilot icon</title>
+  <rect width="64" height="64" rx="14" fill="#22577A"/>
+  <path d="M17 18h30v28H17z" fill="#F7FBFC" rx="4"/>
+  <path d="M23 26h18M23 32h14M23 38h10" stroke="#22577A" stroke-width="3" stroke-linecap="round"/>
+  <path d="m39 39 4 4 8-10" fill="none" stroke="#57CC99" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

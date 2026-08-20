@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "baselines": [
+    {
+      "id": "software-baseline-v1",
+      "family": "software",
+      "displayName": "Software Engineering Baseline",
+      "artifactSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "approvedAt": "2026-01-01T00:00:00.000Z",
+      "immutable": true
+    },
+    {
+      "id": "data-baseline-v1",
+      "family": "data",
+      "displayName": "Data and ML Baseline",
+      "artifactSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "approvedAt": "2026-01-01T00:00:00.000Z",
+      "immutable": true
+    },
+    {
+      "id": "infra-baseline-v1",
+      "family": "infrastructure",
+      "displayName": "Infrastructure Baseline",
+      "artifactSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "approvedAt": "2026-01-01T00:00:00.000Z",
+      "immutable": true
+    }
+  ]
+}

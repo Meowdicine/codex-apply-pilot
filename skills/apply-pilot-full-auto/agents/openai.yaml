@@ -1,0 +1,6 @@
+interface:
+  display_name: "Apply Pilot 有限全自动"
+  short_description: "在成熟度、域名白名单、授权期限和每日提交上限内自动推进申请"
+  default_prompt: "请使用 $apply-pilot-full-auto 评估 readiness；只有全部有限授权检查通过时才运行该白名单申请。"
+policy:
+  allow_implicit_invocation: true

@@ -1,0 +1,39 @@
+{
+  "name": "codex-apply-pilot",
+  "version": "0.1.0",
+  "description": "中文优先的 Codex 求职申请工作流：从 Simplify 引导与半自动双 Gate，逐步升级到有边界的全自动模式。",
+  "author": {
+    "name": "Meowdicine",
+    "url": "https://github.com/Meowdicine"
+  },
+  "homepage": "https://github.com/Meowdicine/codex-apply-pilot",
+  "repository": "https://github.com/Meowdicine/codex-apply-pilot",
+  "license": "MIT",
+  "keywords": [
+    "codex",
+    "job-search",
+    "resume",
+    "application-workflow",
+    "chinese"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Codex Apply Pilot",
+    "shortDescription": "从半自动双 Gate 安全升级到有边界的全自动求职申请。",
+    "longDescription": "用本地问卷、不可变简历基准、候选状态机和幂等提交回执组织求职申请。Simplify 仅使用其官方界面与官方功能，不包含未授权抓取或私有 API。",
+    "developerName": "Meowdicine",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "用 Codex Apply Pilot 带我完成首次设置和预设问卷。",
+      "用半自动模式准备一份申请，并停在两道审核 Gate。",
+      "检查我是否已经满足全自动模式的成熟度条件。"
+    ],
+    "brandColor": "#22577A",
+    "composerIcon": "./assets/icon.svg",
+    "logo": "./assets/logo.svg"
+  }
+}

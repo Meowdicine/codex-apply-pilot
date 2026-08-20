@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 180" role="img" aria-labelledby="title desc">
+  <title id="title">Codex Apply Pilot</title>
+  <desc id="desc">A document with a green check beside the Codex Apply Pilot wordmark.</desc>
+  <rect width="720" height="180" rx="28" fill="#F7FBFC"/>
+  <rect x="38" y="30" width="120" height="120" rx="26" fill="#22577A"/>
+  <path d="M66 57h64v66H66z" fill="#fff"/>
+  <path d="M78 76h40M78 89h31M78 102h23" stroke="#22577A" stroke-width="7" stroke-linecap="round"/>
+  <path d="m110 110 11 11 24-31" fill="none" stroke="#57CC99" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="190" y="88" font-family="Segoe UI,Arial,sans-serif" font-size="46" font-weight="700" fill="#16324F">Codex Apply Pilot</text>
+  <text x="192" y="126" font-family="Segoe UI,Arial,sans-serif" font-size="24" fill="#486581">中文优先 · Local-first · Truthful by design</text>
+</svg>

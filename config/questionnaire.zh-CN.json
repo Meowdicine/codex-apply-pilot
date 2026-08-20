@@ -1,0 +1,286 @@
+{
+  "schemaVersion": 1,
+  "locale": "zh-CN",
+  "groups": [
+    {
+      "id": "identity",
+      "title": "身份与联系方式",
+      "questions": [
+        {
+          "id": "identity.legal-name",
+          "prompt": "你的 legal name 是什么？",
+          "valueType": "string",
+          "sensitivity": "personal",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "auto-fill",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "identity.preferred-name",
+          "prompt": "你希望在允许 preferred name 的表单中使用什么名字？留空表示不用。",
+          "valueType": "string",
+          "sensitivity": "personal",
+          "requiredFor": [],
+          "automationPolicy": "auto-fill",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "contact.email",
+          "prompt": "求职专用邮箱是什么？",
+          "valueType": "string",
+          "sensitivity": "personal",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "auto-fill",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "contact.phone",
+          "prompt": "申请中允许使用的电话号码是什么？",
+          "valueType": "string",
+          "sensitivity": "personal",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "auto-fill",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "links.linkedin",
+          "prompt": "LinkedIn URL 是什么？留空表示不填写。",
+          "valueType": "string",
+          "sensitivity": "personal",
+          "requiredFor": [],
+          "automationPolicy": "auto-fill",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "links.portfolio",
+          "prompt": "GitHub 或 Portfolio URL 是什么？留空表示不填写。",
+          "valueType": "string",
+          "sensitivity": "personal",
+          "requiredFor": [],
+          "automationPolicy": "auto-fill",
+          "inferenceAllowed": false
+        }
+      ]
+    },
+    {
+      "id": "education",
+      "title": "教育与可工作时间",
+      "questions": [
+        {
+          "id": "education.current-school",
+          "prompt": "当前学校或教育机构名称是什么？",
+          "valueType": "string",
+          "sensitivity": "personal",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "auto-fill",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "education.degree-program",
+          "prompt": "当前 degree 与 program 的官方表述是什么？",
+          "valueType": "string",
+          "sensitivity": "personal",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "auto-fill",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "education.expected-graduation",
+          "prompt": "预计毕业年月（YYYY-MM）是什么？",
+          "valueType": "date-month",
+          "sensitivity": "personal",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "ask-until-verified",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "availability.start-date",
+          "prompt": "最早可开始工作的日期（YYYY-MM-DD）是什么？",
+          "valueType": "date",
+          "sensitivity": "ordinary",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "ask-until-verified",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "availability.duration-months",
+          "prompt": "可连续工作的月份数有哪些？用逗号分隔，例如 4,8,12。",
+          "valueType": "number-list",
+          "sensitivity": "ordinary",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "auto-fill",
+          "inferenceAllowed": false
+        }
+      ]
+    },
+    {
+      "id": "legal",
+      "title": "工作资格与法律事实",
+      "questions": [
+        {
+          "id": "legal.work-authorization",
+          "prompt": "你对目标国家/地区的 work authorization 状态是什么？请使用你确认过的准确表述。",
+          "valueType": "string",
+          "sensitivity": "legal-material",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "ask-until-verified",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "legal.sponsorship-required",
+          "prompt": "你现在或未来是否需要 sponsorship？",
+          "valueType": "enum",
+          "allowedValues": ["yes", "no", "prefer-not-to-answer"],
+          "sensitivity": "legal-material",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "ask-until-verified",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "legal.background-check-consent",
+          "prompt": "若岗位要求，你是否同意 background check？",
+          "valueType": "enum",
+          "allowedValues": ["yes", "no", "ask-each-time"],
+          "sensitivity": "legal-material",
+          "requiredFor": [],
+          "automationPolicy": "ask-each-time",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "legal.security-clearance",
+          "prompt": "你当前持有何种 security clearance？没有则填写 none。",
+          "valueType": "string",
+          "sensitivity": "legal-material",
+          "requiredFor": [],
+          "automationPolicy": "ask-until-verified",
+          "inferenceAllowed": false
+        }
+      ]
+    },
+    {
+      "id": "preferences",
+      "title": "求职偏好",
+      "questions": [
+        {
+          "id": "preferences.locations",
+          "prompt": "接受哪些工作地点？用逗号分隔。",
+          "valueType": "string-list",
+          "sensitivity": "ordinary",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "auto-fill",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "preferences.work-arrangements",
+          "prompt": "接受哪些模式？可选 onsite,hybrid,remote，用逗号分隔。",
+          "valueType": "enum-list",
+          "allowedValues": ["onsite", "hybrid", "remote"],
+          "sensitivity": "ordinary",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "auto-fill",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "preferences.role-families",
+          "prompt": "目标岗位族有哪些？例如 software,data,ml,infrastructure。",
+          "valueType": "string-list",
+          "sensitivity": "ordinary",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "auto-fill",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "preferences.compensation-minimum",
+          "prompt": "最低可接受薪酬及币种/周期是什么？不设则留空。",
+          "valueType": "string",
+          "sensitivity": "personal",
+          "requiredFor": [],
+          "automationPolicy": "ask-each-time",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "preferences.relocation",
+          "prompt": "是否愿意 relocation？",
+          "valueType": "enum",
+          "allowedValues": ["yes", "no", "case-by-case"],
+          "sensitivity": "ordinary",
+          "requiredFor": [],
+          "automationPolicy": "auto-fill",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "preferences.travel-percent-max",
+          "prompt": "可接受的最高出差比例是多少（0-100）？",
+          "valueType": "number",
+          "sensitivity": "ordinary",
+          "requiredFor": [],
+          "automationPolicy": "auto-fill",
+          "inferenceAllowed": false
+        }
+      ]
+    },
+    {
+      "id": "voluntary",
+      "title": "自愿披露",
+      "questions": [
+        {
+          "id": "voluntary.demographics-default",
+          "prompt": "未逐项设置的自愿人口统计问题应如何回答？",
+          "valueType": "enum",
+          "allowedValues": ["prefer-not-to-answer", "ask-each-time"],
+          "defaultValue": "prefer-not-to-answer",
+          "sensitivity": "protected",
+          "requiredFor": ["full-auto"],
+          "automationPolicy": "ask-until-verified",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "voluntary.accommodation",
+          "prompt": "是否需要在申请阶段请求 accommodation？",
+          "valueType": "enum",
+          "allowedValues": ["yes", "no", "prefer-not-to-answer", "ask-each-time"],
+          "sensitivity": "protected",
+          "requiredFor": [],
+          "automationPolicy": "ask-each-time",
+          "inferenceAllowed": false
+        }
+      ]
+    },
+    {
+      "id": "automation",
+      "title": "自动化授权",
+      "questions": [
+        {
+          "id": "automation.upload-locked-resume",
+          "prompt": "是否允许上传已通过 hash/QA 锁定的简历？",
+          "valueType": "enum",
+          "allowedValues": ["yes", "no"],
+          "sensitivity": "ordinary",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "ask-until-verified",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "automation.ordinary-factual-fields",
+          "prompt": "是否允许从已验证预设自动填写普通 factual fields？",
+          "valueType": "enum",
+          "allowedValues": ["yes", "no"],
+          "sensitivity": "ordinary",
+          "requiredFor": ["semi-auto", "full-auto"],
+          "automationPolicy": "ask-until-verified",
+          "inferenceAllowed": false
+        },
+        {
+          "id": "automation.full-auto-opt-in",
+          "prompt": "成熟度检查通过后，是否允许启用有时限、有域名 allowlist、有每日上限的全自动模式？",
+          "valueType": "enum",
+          "allowedValues": ["yes", "no"],
+          "sensitivity": "ordinary",
+          "requiredFor": ["full-auto"],
+          "automationPolicy": "ask-until-verified",
+          "inferenceAllowed": false
+        }
+      ]
+    }
+  ]
+}

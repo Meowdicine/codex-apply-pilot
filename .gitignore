@@ -1,0 +1,36 @@
+# Local runtime and personal application data
+.apply-pilot/
+apply-pilot-data/
+profiles/
+answers/
+applications/
+receipts/
+resumes/
+downloads/
+screenshots/
+
+# Secrets and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.cookie
+*.session
+*credentials*.json
+*secrets*.json
+
+# Tooling
+node_modules/
+coverage/
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+
+# Draw.io local exports not intentionally committed
+docs/diagrams/*.drawio.png
+docs/diagrams/*.png
+docs/diagrams/*.pdf
