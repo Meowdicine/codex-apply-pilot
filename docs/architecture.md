@@ -9,6 +9,9 @@ Apply Pilot 把“规则是什么”“现在运行到哪里”“某个候选�
 | Policy | 模式、Gate、readiness、allowlist、上限、Hard Stop | 单一配置/政策写入路径 | 候选运行状态、秘密 |
 | Runtime | lane、调度、当前活动与能力状态 | 单一调度/状态写入路径 | 简历正文、页面秘密 |
 | Candidate checkpoint | 候选 ID、状态版本、artifact hash、click/no-repeat | 当前候选执行者 | 密码、OTP、完整表单 |
+| Preflight report | terminal/no-repeat、duplicate 与 collision decision | 只读扫描器 + 用户 collision review | 外部写入授权、秘密 |
+| Candidate answer snapshot | exact prompt、semantic key、answer revision/source、review decision | 当前候选执行者 | 凭据；protected/legal value 默认仅存 hash |
+| Artifact provenance | candidate、answer snapshot、resume/form/document hash 与 source chain | 当前候选执行者 | artifact 正文、本地输入路径 |
 | Receipt ledger | 状态事件、idempotency key、结果状态、payload hash | 原子追加 | 页面正文、protected 值 |
 | Verified facts | 问卷答案、来源、敏感度、有效期 | 用户确认/受控更新 | 密码、cookie、token |
 | Secret vault | 凭据 | OS credential store | 明文导出到项目 |
@@ -20,6 +23,7 @@ Apply Pilot 把“规则是什么”“现在运行到哪里”“某个候选�
 - **Codex skills**：按初始化、简历、半自动和全自动任务选择流程。
 - **Local CLI/state store**：原子写 JSON、追加回执、校验 schema 和状态版本。
 - **Questionnaire**：保存已核验、可过期、可限制自动填写的答案。
+- **Candidate integrity**：在执行前做 terminal-first preflight，并锁定 identity v2、candidate answers 与 artifacts。
 - **Resume catalog**：登记不可变基准及其 artifact hash。
 - **Application state machine**：候选绑定、Gate、intent、提交和 no-repeat。
 - **Readiness evaluator**：判断全自动是否成熟；不直接扩大权限。
@@ -38,6 +42,8 @@ Apply Pilot 把“规则是什么”“现在运行到哪里”“某个候选�
 
 - 一个 lane 最多一个非终态候选。
 - 官方 URL 必须是 HTTPS 并与候选 ID 绑定。
+- 所有 tailoring、upload 与 browser action 前先检查 terminal/no-repeat receipt 和 identity collision。
+- Gate 2 同时绑定 answer snapshot 与 artifact provenance manifest，不能只比较 filename。
 - 每次变更必须匹配 `expectedStateVersion`。
 - 简历和表单通过 SHA-256 绑定 Gate/授权。
 - `submitAttemptCount` 最大为 1。

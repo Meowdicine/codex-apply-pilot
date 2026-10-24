@@ -16,10 +16,10 @@ description: 只在半自动成熟度已核验、存在明确限时授权、域�
 
 ## 执行
 
-1. 解析 terminal/no-repeat 证据并核验当前官方候选。
+1. 先通过 CLI terminal-first preflight 检查 index、实际 candidate 文件和 receipt ledger，再核验当前官方候选。
 2. 使用 `$apply-pilot-resume` 创建并 QA 真实候选 artifact。只有 readiness 仍有效时，当前 policy 才可免 Gate 1 放行未变化 hash。
 3. 只使用当前已核验答案。任何缺失、过期、`ask-each-time`、legal、protected 或 unsupported value 都必须停止或降级；不得猜测。
-4. 暂存表单，计算 `formSnapshotSha`，重新核验 consent、allowlist、cap、hash 与 security state。
+4. 暂存表单，通过 `snapshot-answers` 冻结 actual prompt、semantic key、answer source/revision 和 review decision，再通过 `lock-artifacts` 冻结 candidate、resume、form 与可选文档。重新核验 consent、allowlist、cap、hash 与 security state。
 5. 在一次 final-click attempt 前持久化一个候选绑定 submit intent。
 6. 要求官方成功。歧义进入 `unknown-submit-state-no-repeat`，绝不再次点击。
 

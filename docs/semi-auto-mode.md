@@ -12,6 +12,8 @@ discovered
   -> resume-review-required       Gate 1
   -> account-registration-required
   -> form-staging
+  -> ANSWER_SNAPSHOT_LOCKED
+  -> ARTIFACT_PROVENANCE_LOCKED
   -> submit-review-required       Gate 2
   -> submit-authorized
   -> submitting
@@ -39,7 +41,7 @@ discovered
 
 ## 表单暂存
 
-只使用已验证问卷答案与已锁定简历。普通事实可以按其 `automationPolicy` 填写；法律、protected 或每次询问项不得被自动推断。完成后生成 `formSnapshotSha`，但不点击最终提交。
+只使用已验证问卷答案与已锁定简历。先冻结 exact prompt、semantic key、answer source/revision 和 review decision，再从实际文件 bytes 生成 provenance manifest。普通事实可以按其 `automationPolicy` 填写；法律、protected 或每次询问项不得被自动推断。完成后生成 `formSnapshotSha`，但不点击最终提交。
 
 ## Gate 2：最终提交审核
 
@@ -48,6 +50,8 @@ Gate 2 manifest 至少绑定：
 - `candidateId`；
 - 官方 URL 的 hash；
 - Gate 1 的 `resumeVersionSha`；
+- 当前 `answerSnapshotSha`；
+- 当前 `artifactManifestSha`；
 - 当前 `formSnapshotSha`；
 - 当前 `stateVersion`；
 - 最终按钮标签；
@@ -58,7 +62,7 @@ Gate 2 manifest 至少绑定：
 ## 最终点击
 
 1. 先在本地持久化 `SUBMIT_INTENT`。
-2. 核验 `submitAttemptCount=0`、没有 terminal/no-repeat 证据、没有安全挑战。
+2. 先运行 terminal-first preflight，核验 `submitAttemptCount=0`、没有 terminal/no-repeat 证据、没有安全挑战。
 3. 最多点击一次准确的最终按钮。
 4. 只以官方网站成功页/回执记录 `submitted-verified`。
 5. 若点击后状态不明确，记录 `unknown-submit-state-no-repeat`，绝不自动再点。

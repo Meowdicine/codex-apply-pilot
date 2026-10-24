@@ -6,12 +6,18 @@ import { fileURLToPath } from 'node:url';
 import process from 'node:process';
 import {
   appendJsonLine,
+  contentAddressedJsonPath,
   initializeState,
   loadApplication,
+  loadApplicationRecords,
   readJson,
+  readJsonLines,
+  saveContentAddressedJson,
+  saveArtifactBytes,
   saveApplication,
   statePaths,
-  writeJsonAtomic
+  writeJsonAtomic,
+  withStateLock
 } from './lib/storage.mjs';
 import {
   buildSubmitReviewManifest,
@@ -26,6 +32,17 @@ import {
   upsertAnswer
 } from './lib/questionnaire.mjs';
 import { assertDomainAllowed, evaluateFullAutoReadiness } from './lib/readiness.mjs';
+import {
+  applyCollisionReview,
+  assertArtifactProvenanceManifest,
+  assertCandidateAnswerSnapshot,
+  buildArtifactProvenanceManifest,
+  buildCandidateAnswerSnapshot,
+  candidateIdentityFromRecord,
+  createCandidateIdentity,
+  runTerminalFirstPreflight,
+  sha256Buffer
+} from './lib/candidate-integrity.mjs';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const projectRoot = path.resolve(scriptDirectory, '..');
@@ -66,6 +83,11 @@ function parseInteger(value, name) {
   const parsed = Number(value);
   if (!Number.isInteger(parsed)) throw new Error(`--${name} 必须是整数`);
   return parsed;
+}
+
+function parseCsvOption(value) {
+  if (!value || value === true) return [];
+  return String(value).split(',').map((item) => item.trim()).filter(Boolean);
 }
 
 function print(value, json = false) {
@@ -109,6 +131,87 @@ async function readEventPayload(options) {
   return {};
 }
 
+function identityFromOptions(options) {
+  return createCandidateIdentity({
+    company: requireOption(options, 'company'),
+    role: requireOption(options, 'role'),
+    location: options.location ? String(options.location) : null,
+    officialUrl: requireOption(options, 'official-url'),
+    employerJobId: options['job-id'] ? String(options['job-id']) : null,
+    companyAliases: parseCsvOption(options['company-aliases']),
+    roleAliases: parseCsvOption(options['role-aliases']),
+    locationAliases: parseCsvOption(options['location-aliases'])
+  });
+}
+
+async function evaluatePreflight(paths, identity, currentApplication = null) {
+  const [applicationIndex, receipts, records] = await Promise.all([
+    readJson(paths.applicationsIndex),
+    readJsonLines(paths.receiptLedger),
+    loadApplicationRecords(paths)
+  ]);
+  const report = runTerminalFirstPreflight({
+    identity,
+    applicationIndex: [...applicationIndex.applications, ...records],
+    receipts,
+    currentApplication
+  });
+  if (report.decision === 'review-collision' && currentApplication?.preflight?.collisionReview) {
+    return applyCollisionReview(report, currentApplication.preflight.collisionReview);
+  }
+  return report;
+}
+
+async function maybeApplyCollisionReview(report, options) {
+  if (!options['collision-review-file']) return report;
+  return applyCollisionReview(report, await readJson(path.resolve(String(options['collision-review-file']))));
+}
+
+function assertPreflightSafe(report) {
+  if (report.safeToProceed) return;
+  const codes = report.findings.map((item) => item.code).join(', ') || 'no-finding-code';
+  throw new Error(`terminal-first preflight 阻止继续：${report.decision} (${codes})`);
+}
+
+async function persistPreflight(paths, report) {
+  return saveContentAddressedJson(
+    paths.preflightDir,
+    report.candidateId,
+    report.preflightReportSha256,
+    report
+  );
+}
+
+async function transitionAndPersist(paths, application, type, payload, options = {}) {
+  const result = transition(application, {
+    type,
+    payload,
+    actor: options.actor || 'codex',
+    idempotencyKey: options.idempotencyKey
+  }, { expectedStateVersion: application.stateVersion });
+  await saveApplication(paths, result.application);
+  await appendJsonLine(paths.receiptLedger, result.receipt);
+  return result;
+}
+
+async function validateLockedArtifacts(paths, application) {
+  const snapshot = await readJson(contentAddressedJsonPath(
+    paths.answerSnapshotsDir, application.applicationId, application.answerSnapshotSha
+  ));
+  assertCandidateAnswerSnapshot(snapshot, application);
+  const manifest = await readJson(contentAddressedJsonPath(
+    paths.artifactManifestsDir, application.applicationId, application.artifactManifestSha
+  ));
+  assertArtifactProvenanceManifest(manifest, application);
+  for (const artifact of manifest.artifacts) {
+    if (!/^[a-f0-9]{64}$/.test(artifact.contentSha256 || '')) throw new Error('artifact content hash 无效');
+    const bytes = await readFile(path.join(paths.artifactBlobsDir, artifact.contentSha256));
+    if (sha256Buffer(bytes) !== artifact.contentSha256 || bytes.byteLength !== artifact.byteLength) {
+      throw new Error('artifact frozen bytes 已漂移');
+    }
+  }
+}
+
 function helpText() {
   return `codex-apply-pilot 0.1.0
 
@@ -116,13 +219,20 @@ function helpText() {
 
 用法：
   apply-pilot init [--state-dir PATH]
-  apply-pilot questionnaire [--mode semi-auto|full-auto] [--required-only]
+  apply-pilot questionnaire [--mode semi-auto|full-auto] [--required-only|--all]
   apply-pilot set-answer --id QUESTION_ID --value VALUE [--explicit]
   apply-pilot status [--application APPLICATION_ID] [--json]
   apply-pilot readiness [--json]
   apply-pilot mode --set semi-auto|full-auto
+  apply-pilot preflight --application APPLICATION_ID [--collision-review-file PATH] [--json]
+  apply-pilot preflight --company NAME --role ROLE --official-url HTTPS_URL
+      [--job-id ID] [--location LOCATION] [--company-aliases CSV] [--role-aliases CSV]
   apply-pilot new-application --company NAME --role ROLE --official-url HTTPS_URL
-      [--job-id ID] [--portal-family NAME] [--mode semi-auto|full-auto]
+      [--job-id ID] [--location LOCATION] [--portal-family NAME] [--mode semi-auto|full-auto]
+      [--company-aliases CSV] [--role-aliases CSV] [--location-aliases CSV]
+      [--collision-review-file PATH]
+  apply-pilot snapshot-answers --application APPLICATION_ID --questions-file PATH
+  apply-pilot lock-artifacts --application APPLICATION_ID --artifacts-file PATH
   apply-pilot event --application APPLICATION_ID --type EVENT_TYPE
       --expected-version N [--payload-json JSON|--payload-file PATH] [--idempotency-key KEY]
   apply-pilot manifest --application APPLICATION_ID [--button-label LABEL] [--expires-minutes N]
@@ -143,11 +253,13 @@ async function commandQuestionnaire(stateDir, options) {
   const answerDocument = await readJson(paths.answers);
   const mode = options.mode ? String(options.mode) : (await readJson(paths.policy)).mode;
   if (!['semi-auto', 'full-auto'].includes(mode)) throw new Error('--mode 必须是 semi-auto 或 full-auto');
+  if (options['required-only'] && options.all) throw new Error('--required-only 与 --all 只能使用一个');
   await runInteractiveQuestionnaire({
     catalog,
     answerDocument,
     mode,
-    requiredOnly: Boolean(options['required-only'])
+    requiredOnly: Boolean(options['required-only']),
+    includeAll: Boolean(options.all)
   });
   await writeJsonAtomic(paths.answers, answerDocument);
   print({ status: 'saved', answerCount: answerDocument.answers.length, stateDirectory: paths.root }, Boolean(options.json));
@@ -211,17 +323,51 @@ async function commandMode(stateDir, options) {
   print({ status: 'mode-updated', mode: nextMode }, Boolean(options.json));
 }
 
+async function commandPreflight(stateDir, options) {
+  const paths = await ensureInitialized(stateDir);
+  let application = null;
+  let identity;
+  if (options.application) {
+    application = await loadApplication(paths, String(options.application));
+    identity = candidateIdentityFromRecord(application);
+  } else {
+    identity = identityFromOptions(options);
+  }
+  const report = await maybeApplyCollisionReview(
+    await evaluatePreflight(paths, identity, application),
+    options
+  );
+  print(report, true);
+  if (!report.safeToProceed) process.exitCode = 2;
+}
+
 async function commandNewApplication(stateDir, options) {
   const paths = await ensureInitialized(stateDir);
   const policy = await readJson(paths.policy);
   const mode = options.mode ? String(options.mode) : policy.mode;
+  const identity = identityFromOptions(options);
+  const preflightReport = await maybeApplyCollisionReview(
+    await evaluatePreflight(paths, identity),
+    options
+  );
+  assertPreflightSafe(preflightReport);
+  await persistPreflight(paths, preflightReport);
   const application = createApplication({
     company: requireOption(options, 'company'),
     role: requireOption(options, 'role'),
+    location: options.location ? String(options.location) : null,
     officialUrl: requireOption(options, 'official-url'),
     employerJobId: options['job-id'] ? String(options['job-id']) : null,
     portalFamily: options['portal-family'] ? String(options['portal-family']) : 'unknown',
-    mode
+    mode,
+    candidateIdentity: identity,
+    preflight: {
+      decision: preflightReport.decision,
+      safeToProceed: true,
+      reportSha256: preflightReport.preflightReportSha256,
+      checkedAt: preflightReport.checkedAt,
+      collisionReview: preflightReport.collisionReview
+    }
   });
   const index = await readJson(paths.applicationsIndex);
   if (index.applications.some((item) => item.candidateId === application.candidateId)) {
@@ -238,19 +384,143 @@ async function commandNewApplication(stateDir, options) {
     status: 'created',
     applicationId: application.applicationId,
     candidateId: application.candidateId,
+    identityVersion: application.candidateIdentity.identityVersion,
+    preflightReportSha256: application.preflight.reportSha256,
     state: application.state,
     mode: application.mode
   }, Boolean(options.json));
+}
+
+async function commandSnapshotAnswers(stateDir, options) {
+  const paths = await ensureInitialized(stateDir);
+  const application = await loadApplication(paths, requireOption(options, 'application'));
+  const identity = candidateIdentityFromRecord(application);
+  const preflight = await maybeApplyCollisionReview(
+    await evaluatePreflight(paths, identity, application),
+    options
+  );
+  assertPreflightSafe(preflight);
+  await persistPreflight(paths, preflight);
+  const [answerDocument, questionSet] = await Promise.all([
+    readJson(paths.answers),
+    readJson(path.resolve(requireOption(options, 'questions-file')))
+  ]);
+  const snapshot = buildCandidateAnswerSnapshot({ application, answerDocument, questionSet });
+  if (!snapshot.readyForStaging) {
+    throw new Error(`candidate answer snapshot 尚有未解决问题：${snapshot.unresolved.map((item) => item.semanticKey).join(', ')}`);
+  }
+  const snapshotPath = await saveContentAddressedJson(
+    paths.answerSnapshotsDir,
+    application.applicationId,
+    snapshot.answerSnapshotSha256,
+    snapshot
+  );
+  const result = await transitionAndPersist(paths, application, 'ANSWER_SNAPSHOT_LOCKED', {
+    candidateId: application.candidateId,
+    candidateIdentitySha256: snapshot.candidateIdentitySha256,
+    answerSnapshotSha: snapshot.answerSnapshotSha256,
+    readyForStaging: true,
+    preflightReportSha256: preflight.preflightReportSha256
+  }, {
+    idempotencyKey: options['idempotency-key'] ? String(options['idempotency-key']) : undefined
+  });
+  print({
+    status: 'answer-snapshot-locked',
+    applicationId: application.applicationId,
+    stateVersion: result.application.stateVersion,
+    answerSnapshotSha256: snapshot.answerSnapshotSha256,
+    snapshotPath
+  }, true);
+}
+
+async function commandLockArtifacts(stateDir, options) {
+  const paths = await ensureInitialized(stateDir);
+  const application = await loadApplication(paths, requireOption(options, 'application'));
+  if (!application.answerSnapshotSha) throw new Error('必须先运行 snapshot-answers');
+  const identity = candidateIdentityFromRecord(application);
+  const preflight = await maybeApplyCollisionReview(
+    await evaluatePreflight(paths, identity, application),
+    options
+  );
+  assertPreflightSafe(preflight);
+  await persistPreflight(paths, preflight);
+  const artifactsFile = path.resolve(requireOption(options, 'artifacts-file'));
+  const artifactPlan = await readJson(artifactsFile);
+  artifactPlan.artifacts = (artifactPlan.artifacts || []).map((item) => ({
+    ...item,
+    file: item.file ? path.resolve(path.dirname(artifactsFile), item.file) : item.file
+  }));
+  const answerSnapshot = await readJson(contentAddressedJsonPath(
+    paths.answerSnapshotsDir,
+    application.applicationId,
+    application.answerSnapshotSha
+  ));
+  const manifest = await buildArtifactProvenanceManifest({
+    application,
+    answerSnapshot,
+    artifactPlan,
+    artifactSink: (digest, bytes) => saveArtifactBytes(paths.artifactBlobsDir, digest, bytes)
+  });
+  const manifestPath = await saveContentAddressedJson(
+    paths.artifactManifestsDir,
+    application.applicationId,
+    manifest.artifactManifestSha256,
+    manifest
+  );
+  const result = await transitionAndPersist(paths, application, 'ARTIFACT_PROVENANCE_LOCKED', {
+    candidateId: application.candidateId,
+    candidateIdentitySha256: manifest.candidateIdentitySha256,
+    officialUrlSha256: manifest.officialUrlSha256,
+    resumeVersionSha: manifest.resumeVersionSha256,
+    answerSnapshotSha: manifest.answerSnapshotSha256,
+    formSnapshotSha: manifest.formSnapshotSha256,
+    artifactManifestSha: manifest.artifactManifestSha256,
+    preflightReportSha256: preflight.preflightReportSha256
+  }, {
+    idempotencyKey: options['idempotency-key'] ? String(options['idempotency-key']) : undefined
+  });
+  print({
+    status: 'artifact-provenance-locked',
+    applicationId: application.applicationId,
+    stateVersion: result.application.stateVersion,
+    artifactManifestSha256: manifest.artifactManifestSha256,
+    formSnapshotSha256: manifest.formSnapshotSha256,
+    manifestPath
+  }, true);
 }
 
 async function commandEvent(stateDir, options) {
   const paths = await ensureInitialized(stateDir);
   const applicationId = requireOption(options, 'application');
   const current = await loadApplication(paths, applicationId);
-  const payload = await readEventPayload(options);
+  let payload = await readEventPayload(options);
+  const eventType = requireOption(options, 'type');
+  if (['ANSWER_SNAPSHOT_LOCKED', 'ARTIFACT_PROVENANCE_LOCKED'].includes(eventType)) {
+    throw new Error('请使用 snapshot-answers 或 lock-artifacts 创建并核验实际内容，禁止手工注入 lock event');
+  }
+  const preflightEvents = new Set([
+    'SOURCE_VERIFIED',
+    'ELIGIBILITY_PASSED',
+    'RESUME_STARTED',
+    'RESUME_READY',
+    'RESUME_APPROVED',
+    'ACCOUNT_READY',
+    'FORM_STAGED',
+    'SUBMIT_APPROVED',
+    'SUBMIT_INTENT'
+  ]);
+  if (preflightEvents.has(eventType)) {
+    const preflight = await evaluatePreflight(paths, candidateIdentityFromRecord(current), current);
+    assertPreflightSafe(preflight);
+    await persistPreflight(paths, preflight);
+    payload = { ...payload, preflightReportSha256: preflight.preflightReportSha256 };
+  }
+  if (current.schemaVersion >= 2 && ['FORM_STAGED', 'SUBMIT_APPROVED', 'SUBMIT_INTENT'].includes(eventType)) {
+    await validateLockedArtifacts(paths, current);
+  }
   const expectedStateVersion = parseInteger(requireOption(options, 'expected-version'), 'expected-version');
   const event = {
-    type: requireOption(options, 'type'),
+    type: eventType,
     payload,
     idempotencyKey: options['idempotency-key'] ? String(options['idempotency-key']) : undefined,
     actor: options.actor ? String(options.actor) : 'codex'
@@ -270,6 +540,7 @@ async function commandEvent(stateDir, options) {
 async function commandManifest(stateDir, options) {
   const paths = await ensureInitialized(stateDir);
   const application = await loadApplication(paths, requireOption(options, 'application'));
+  if (application.schemaVersion >= 2) await validateLockedArtifacts(paths, application);
   const manifest = buildSubmitReviewManifest(application, {
     finalButtonLabel: options['button-label'] ? String(options['button-label']) : undefined,
     expiresInMinutes: options['expires-minutes'] ? parseInteger(options['expires-minutes'], 'expires-minutes') : 30
@@ -301,6 +572,12 @@ async function main() {
   const command = positionals[0] || 'help';
   const stateDir = path.resolve(options['state-dir'] ? String(options['state-dir']) : defaultStateDir);
 
+  if (['help', '--help', '-h'].includes(command)) {
+    print(helpText());
+    return;
+  }
+
+  await withStateLock(stateDir, async () => {
   switch (command) {
     case 'help':
     case '--help':
@@ -325,8 +602,17 @@ async function main() {
     case 'mode':
       await commandMode(stateDir, options);
       break;
+    case 'preflight':
+      await commandPreflight(stateDir, options);
+      break;
     case 'new-application':
       await commandNewApplication(stateDir, options);
+      break;
+    case 'snapshot-answers':
+      await commandSnapshotAnswers(stateDir, options);
+      break;
+    case 'lock-artifacts':
+      await commandLockArtifacts(stateDir, options);
       break;
     case 'event':
       await commandEvent(stateDir, options);
@@ -340,6 +626,7 @@ async function main() {
     default:
       throw new Error(`未知命令：${command}\n\n${helpText()}`);
   }
+  });
 }
 
 main().catch((error) => {

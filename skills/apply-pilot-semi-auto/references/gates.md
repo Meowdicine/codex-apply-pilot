@@ -22,6 +22,8 @@
 - `candidateId`;
 - `officialUrlHash`;
 - `resumeVersionSha`;
+- `answerSnapshotSha`;
+- `artifactManifestSha`;
 - `formSnapshotSha`;
 - current `stateVersion`;
 - final button label;
@@ -32,7 +34,7 @@
 ## 点击前验证
 
 - manifest 当前有效且未过期；
-- candidate、URL hash、resume hash、form hash 与 state version 匹配；
+- candidate、URL hash、resume hash、answer snapshot hash、artifact manifest hash、form hash 与 state version 匹配；
 - `submitAttemptCount=0` 且不存在 submit intent；
 - 不存在 terminal/no-repeat evidence；
 - 不存在 active security 或 unsupported-fact boundary；

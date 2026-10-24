@@ -3,30 +3,36 @@
   "answers": [
     {
       "questionId": "preferences.role-families",
+      "questionRevision": 1,
+      "answerScope": "search",
       "value": ["software", "data", "infrastructure"],
       "source": "user-explicit",
       "sensitivity": "ordinary",
       "automationPolicy": "auto-fill",
       "verifiedAt": "2026-01-01T00:00:00.000Z",
-      "expiresAt": null
+      "expiresAt": "2026-04-01T00:00:00.000Z"
     },
     {
       "questionId": "voluntary.demographics-default",
+      "questionRevision": 1,
+      "answerScope": "candidate-default",
       "value": "prefer-not-to-answer",
       "source": "prefer-not-to-answer",
       "sensitivity": "protected",
-      "automationPolicy": "auto-fill",
+      "automationPolicy": "ask-until-verified",
       "verifiedAt": "2026-01-01T00:00:00.000Z",
-      "expiresAt": null
+      "expiresAt": "2026-04-01T00:00:00.000Z"
     },
     {
       "questionId": "legal.sponsorship-required",
-      "value": null,
+      "questionRevision": 1,
+      "answerScope": "profile",
+      "value": "no",
       "source": "user-explicit",
       "sensitivity": "legal-material",
       "automationPolicy": "ask-until-verified",
       "verifiedAt": "2026-01-01T00:00:00.000Z",
-      "expiresAt": null
+      "expiresAt": "2026-01-31T00:00:00.000Z"
     }
   ]
 }

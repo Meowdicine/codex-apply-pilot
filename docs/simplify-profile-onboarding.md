@@ -12,6 +12,8 @@ Simplify 在本项目中是用户主动操作的官方 Profile、Copilot 与 Res
 
 ## 建议顺序
 
+Simplify 当前把信息大体分为 Profile、Personal Info 与 Job Preferences。Apply Pilot 的 `answerScope` 用于降低误用风险：`profile` 对应可复核的经历/教育/联系方式，`search` 对应匹配偏好，`candidate-default` 只提供候选级处理策略，`consent` 不能被普通事实替代。
+
 ### 1. Personal information
 
 从 `answers.json` 中只使用已验证的姓名、求职邮箱、电话和公开链接。显示值与官方证件不一致时停止并让用户修正来源，不自动“纠错”。
@@ -26,7 +28,7 @@ Simplify 在本项目中是用户主动操作的官方 Profile、Copilot 与 Res
 
 ### 4. Links 与 ordinary preferences
 
-核对 LinkedIn、GitHub/Portfolio、地点、工作模式、岗位族等普通偏好。薪酬、relocation 和 travel 若配置为 `ask-each-time`，不得升级成默认自动答案。
+核对 LinkedIn、GitHub/Portfolio、地点、工作模式、岗位族、employment type 与 industry 等普通偏好。薪酬、relocation、commute、schedule 和 travel 若配置为 `ask-each-time`，不得升级成默认自动答案。
 
 ### 5. Documents
 
@@ -41,6 +43,10 @@ Simplify 在本项目中是用户主动操作的官方 Profile、Copilot 与 Res
 - 有稳定的 `family` 和 `artifactSha256`；
 - 不包含为某个具体岗位捏造的技能或经历；
 - 只作为候选专用副本的起点。
+
+### 7. Common 与 Unique Questions
+
+官方 Copilot 可以保存并复用完全同文的问题答案，但 Apply Pilot 不把“同文”视为“仍然适用”。复用前仍需核对当前 company、role、JD、答案 revision、事实有效期与候选级 review policy。开放式动机回答默认只作为 draft；不得把过去雇主专用答案直接提交给新雇主。
 
 ## 完成检查
 

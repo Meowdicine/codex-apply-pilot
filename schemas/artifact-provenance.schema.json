@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Meowdicine/codex-apply-pilot/schemas/artifact-provenance.schema.json",
+  "title": "Apply Pilot artifact provenance lock",
+  "type": "object",
+  "required": ["schemaVersion", "manifestType", "applicationId", "candidateId", "candidateIdentitySha256", "officialUrlSha256", "answerSnapshotSha256", "resumeVersionSha256", "formSnapshotSha256", "createdAt", "artifacts", "artifactManifestSha256"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "manifestType": { "const": "artifact-provenance-lock" },
+    "applicationId": { "type": "string", "minLength": 8 },
+    "candidateId": { "$ref": "#/$defs/sha256" },
+    "candidateIdentitySha256": { "$ref": "#/$defs/sha256" },
+    "officialUrlSha256": { "$ref": "#/$defs/sha256" },
+    "answerSnapshotSha256": { "$ref": "#/$defs/sha256" },
+    "resumeVersionSha256": { "$ref": "#/$defs/sha256" },
+    "formSnapshotSha256": { "$ref": "#/$defs/sha256" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "artifacts": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "required": ["kind", "logicalName", "mediaType", "contentSha256", "byteLength", "source"],
+        "properties": {
+          "kind": { "enum": ["resume", "cover-letter", "transcript", "form-snapshot", "other"] },
+          "logicalName": { "type": "string", "minLength": 1 },
+          "mediaType": { "type": "string", "minLength": 1 },
+          "contentSha256": { "$ref": "#/$defs/sha256" },
+          "byteLength": { "type": "integer", "minimum": 0 },
+          "source": { "type": "object" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "artifactManifestSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } },
+  "additionalProperties": false
+}

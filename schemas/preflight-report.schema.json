@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Meowdicine/codex-apply-pilot/schemas/preflight-report.schema.json",
+  "title": "Apply Pilot terminal-first preflight report",
+  "type": "object",
+  "required": ["schemaVersion", "reportType", "candidateId", "candidateIdentitySha256", "checkedAt", "decision", "safeToProceed", "findings", "collisionReview", "preflightReportSha256"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "reportType": { "const": "terminal-first-preflight" },
+    "candidateId": { "$ref": "#/$defs/sha256" },
+    "candidateIdentitySha256": { "$ref": "#/$defs/sha256" },
+    "checkedAt": { "type": "string", "format": "date-time" },
+    "decision": { "enum": ["proceed", "proceed-reviewed-collision", "review-collision", "stop-duplicate", "stop-terminal", "stop-no-repeat"] },
+    "safeToProceed": { "type": "boolean" },
+    "findings": { "type": "array", "items": { "type": "object" } },
+    "collisionReview": { "type": ["object", "null"] },
+    "collisionFingerprintSha256": { "$ref": "#/$defs/sha256" },
+    "preflightReportSha256": { "$ref": "#/$defs/sha256" }
+  },
+  "$defs": { "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } },
+  "additionalProperties": false
+}

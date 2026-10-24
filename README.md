@@ -2,7 +2,7 @@
 
 一个**中文优先、本地优先**的 Codex 求职申请工作流。它帮助用户先整理可验证的个人预设与简历基准，再从有两道人工审核 Gate 的半自动模式，逐步升级到有范围、有期限、可撤销的全自动模式。
 
-当前发布形态是 **private alpha**；未来若转为公开仓库，必须先重新完成隐私、条款与历史扫描。
+当前发布形态是 **alpha**，GitHub 仓库已公开。公开发布前必须完成工作树及 Git 历史隐私扫描，并重新核对条款边界；运行数据始终保留在使用者本地。
 
 > [!IMPORTANT]
 > 本项目处于实验阶段，不隶属于或代表 OpenAI、Simplify 或任何招聘平台。使用者必须遵守目标网站条款、当地法律及雇主要求。私有部署不会放宽安全边界：本项目不抓取 Simplify、不调用隐藏 API、不绕过 CAPTCHA/2FA，也不猜测法律、身份、资历或凭据事实。
@@ -15,6 +15,7 @@
 - 半自动模式保留两道候选绑定 Gate：简历审核与最终提交审核。
 - 全自动模式只在半自动经验、简历基准、浏览器测试和有限授权全部通过后开放。
 - 用候选 ID、状态版本、artifact hash 和一次性提交意图避免重复提交。
+- 在任何 tailoring、upload 或 browser action 前运行 terminal-first preflight，并用 identity v2、answer snapshot 与 provenance manifest 阻止候选混用。
 
 ## 两种模式
 
@@ -70,6 +71,7 @@ node scripts/apply-pilot.mjs doctor --state-dir .apply-pilot --json
 项目把策略、运行时、候选状态、审计回执和秘密分开管理。浏览器执行者不能把“页面看起来成功”当作官方成功；调度器不能替浏览器执行者点击、填表或处理凭据。
 
 - [系统架构与权威分层](docs/architecture.md)
+- [候选完整性链路](docs/candidate-integrity.md)
 - [双模式状态机](docs/diagrams/semi-vs-full-state-machine.svg)
 - [安全边界](docs/diagrams/security-boundaries.svg)
 - 可编辑图源位于 `docs/diagrams/*.drawio`

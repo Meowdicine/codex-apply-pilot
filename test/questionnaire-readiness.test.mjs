@@ -4,6 +4,8 @@ import test from 'node:test';
 
 import {
   flattenQuestions,
+  isQuestionApplicable,
+  loadQuestionnaire,
   missingRequiredAnswers,
   parseAnswer,
   rejectSecretValue,
@@ -12,7 +14,7 @@ import {
 import { evaluateFullAutoReadiness } from '../scripts/lib/readiness.mjs';
 
 const root = new URL('../', import.meta.url);
-const catalog = JSON.parse(await readFile(new URL('config/questionnaire.zh-CN.json', root), 'utf8'));
+const catalog = await loadQuestionnaire(new URL('config/questionnaire.zh-CN.json', root));
 const policy = JSON.parse(await readFile(new URL('config/default-policy.json', root), 'utf8'));
 
 function future(minutes = 60) {
@@ -25,10 +27,15 @@ function past(minutes = 60) {
 
 function validValue(question) {
   if (question.id === 'automation.full-auto-opt-in') return 'yes';
+  if (question.id === 'contact.phone') return '+15555550123';
   if (question.allowedValues) return question.allowedValues[0];
   switch (question.valueType) {
     case 'date': return '2030-01-01';
     case 'date-month': return '2030-01';
+    case 'email': return 'candidate@example.test';
+    case 'url': return 'https://example.test/profile';
+    case 'integer': return question.validation?.minimum || 0;
+    case 'key-value-list': return { CA: 'verified-status' };
     case 'number': return 0;
     case 'number-list': return [4];
     case 'string-list': return ['example'];
@@ -124,6 +131,53 @@ test('question parsing validates enums and calendar formats', () => {
   const graduation = flattenQuestions(catalog).find((item) => item.id === 'education.expected-graduation');
   assert.equal(parseAnswer(graduation, '2030-12'), '2030-12');
   assert.throws(() => parseAnswer(graduation, '2030-13'), /年月格式/);
+
+  const startDate = flattenQuestions(catalog).find((item) => item.id === 'availability.start-date');
+  assert.throws(() => parseAnswer(startDate, '2030-02-30'), /真实存在/);
+});
+
+test('expanded catalog keeps stable IDs and validates richer value types', () => {
+  const questions = flattenQuestions(catalog);
+  assert.ok(questions.length >= 90);
+  assert.equal(new Set(questions.map((item) => item.id)).size, questions.length);
+
+  const email = questions.find((item) => item.id === 'contact.email');
+  assert.equal(parseAnswer(email, 'candidate@example.test'), 'candidate@example.test');
+  assert.throws(() => parseAnswer(email, 'not-an-email'), /有效邮箱/);
+
+  const linkedIn = questions.find((item) => item.id === 'links.linkedin');
+  assert.throws(() => parseAnswer(linkedIn, 'http://example.test/profile'), /必须使用 https/);
+
+  const languages = questions.find((item) => item.id === 'qualifications.language-proficiency');
+  assert.deepEqual(parseAnswer(languages, 'English=professional,French=basic'), {
+    English: 'professional',
+    French: 'basic'
+  });
+});
+
+test('conditional questions activate only after their explicit parent answer', () => {
+  const questions = flattenQuestions(catalog);
+  const parent = questions.find((item) => item.id === 'legal.authorization-time-limited');
+  const expiry = questions.find((item) => item.id === 'legal.authorization-expiry');
+  const document = { schemaVersion: 1, answers: [] };
+
+  assert.equal(isQuestionApplicable(expiry, document), false);
+  upsertAnswer(document, parent, 'no', { source: 'user-explicit', explicit: true });
+  assert.equal(isQuestionApplicable(expiry, document), false);
+  upsertAnswer(document, parent, 'yes', { source: 'user-explicit', explicit: true });
+  assert.equal(isQuestionApplicable(expiry, document), true);
+});
+
+test('new answers inherit scope, revision, and review expiry', () => {
+  const question = flattenQuestions(catalog).find((item) => item.id === 'availability.start-date');
+  const document = { schemaVersion: 1, answers: [] };
+  const answer = upsertAnswer(document, question, '2030-01-01', {
+    now: '2026-01-01T00:00:00.000Z'
+  });
+
+  assert.equal(answer.answerScope, 'profile');
+  assert.equal(answer.questionRevision, 1);
+  assert.equal(answer.expiresAt, '2026-03-02T00:00:00.000Z');
 });
 
 test('full-auto readiness passes only with the complete maturity fixture', () => {

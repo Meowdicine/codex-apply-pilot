@@ -36,6 +36,9 @@ node scripts/apply-pilot.mjs doctor --state-dir .apply-pilot --json
 - `consent-policy.json`：全自动有限授权和能力检查。
 - `resume-catalog.json`：不可变简历基准的 ID、族与 hash。
 - `applications/`：候选绑定状态与索引。
+- `preflight/`：content-addressed terminal-first 检查报告。
+- `snapshots/answers/`：候选绑定的实际问题与答案决策快照。
+- `manifests/artifacts/`：resume/form/document provenance lock。
 - `receipts/events.jsonl`：非秘密状态转移回执。
 
 不要把真实运行目录复制进仓库，也不要把完整页面、表单或简历正文写入普通回执。
@@ -54,7 +57,7 @@ node scripts/apply-pilot.mjs doctor --state-dir .apply-pilot --json
 
 ## 6. 跑通半自动模式
 
-按[半自动模式](semi-auto-mode.md)完成。创建候选前先记录准确的官方 HTTPS URL：
+按[半自动模式](semi-auto-mode.md)与[候选完整性链路](candidate-integrity.md)完成。创建候选前先记录准确的官方 HTTPS URL，并运行 terminal-first preflight：
 
 ```powershell
 node scripts/apply-pilot.mjs new-application --state-dir .apply-pilot `
@@ -71,9 +74,10 @@ node scripts/apply-pilot.mjs new-application --state-dir .apply-pilot `
 2. 创建候选专用简历，完成真实精修与 QA。
 3. Gate 1 审核锁定的简历版本。
 4. 用户完成新账号注册与登录。
-5. 暂存表单并生成快照 hash。
-6. Gate 2 审核候选、简历、表单版本和最终按钮。
-7. 持久化一次性提交意图后最多点击一次，并核验官方成功页。
+5. 冻结 candidate answer snapshot，并从实际文件生成 artifact provenance lock。
+6. 暂存表单并生成与 provenance lock 一致的 hash。
+7. Gate 2 审核候选、答案快照、artifact manifest、表单版本和最终按钮。
+8. 持久化一次性提交意图后最多点击一次，并核验官方成功页。
 
 ## 7. 何时考虑全自动
 

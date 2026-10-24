@@ -11,6 +11,7 @@ import {
   SHA_A,
   SHA_B,
   SHA_C,
+  SHA_D,
   advanceSemiAutoToSubmitReview,
   advanceToResumeReview,
   applyEvent
@@ -23,7 +24,13 @@ function newSemiAuto() {
     officialUrl: 'https://careers.example.test/jobs/123?utm_source=test',
     employerJobId: '123',
     portalFamily: 'greenhouse',
-    mode: 'semi-auto'
+    mode: 'semi-auto',
+    preflight: {
+      decision: 'proceed',
+      safeToProceed: true,
+      reportSha256: 'e'.repeat(64),
+      checkedAt: '2026-01-01T00:00:00.000Z'
+    }
   });
 }
 
@@ -83,6 +90,8 @@ test('Gate 2 exact manifest advances once when every binding is unchanged', () =
   assert.equal(approved.gate2.candidateId, review.candidateId);
   assert.equal(approved.gate2.officialUrlHash, sha256(review.officialUrl));
   assert.equal(approved.gate2.resumeVersionSha, SHA_A);
+  assert.equal(approved.gate2.answerSnapshotSha, SHA_C);
+  assert.equal(approved.gate2.artifactManifestSha, SHA_D);
   assert.equal(approved.gate2.formSnapshotSha, SHA_B);
 });
 
@@ -92,6 +101,8 @@ test('Gate 2 rejects candidate, resume, form, state-version, and expiry drift', 
   const cases = [
     ['candidate', { ...baseline, candidateId: SHA_C }, /candidateId.*不匹配/],
     ['resume', { ...baseline, resumeVersionSha: SHA_C }, /resumeVersionSha.*不匹配/],
+    ['answer snapshot', { ...baseline, answerSnapshotSha: SHA_A }, /answerSnapshotSha.*不匹配/],
+    ['artifact manifest', { ...baseline, artifactManifestSha: SHA_A }, /artifactManifestSha.*不匹配/],
     ['form', { ...baseline, formSnapshotSha: SHA_C }, /formSnapshotSha.*不匹配/],
     ['state version', { ...baseline, stateVersion: baseline.stateVersion + 1 }, /stateVersion.*漂移/],
     ['expiry', { ...baseline, expiresAt: new Date(Date.now() - 60_000).toISOString() }, /已过期/]

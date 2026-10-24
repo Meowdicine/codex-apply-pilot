@@ -13,7 +13,9 @@
         "required": ["questionId", "value", "source", "sensitivity", "automationPolicy", "verifiedAt"],
         "properties": {
           "questionId": { "type": "string", "minLength": 3 },
-          "value": {},
+          "questionRevision": { "type": "integer", "minimum": 1 },
+          "answerScope": { "enum": ["profile", "search", "candidate-default", "consent"] },
+          "value": { "not": { "type": "null" } },
           "source": {
             "enum": ["user-explicit", "verified-document", "approved-resume", "deterministic-normalization", "prefer-not-to-answer"]
           },
