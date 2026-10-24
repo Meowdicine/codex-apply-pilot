@@ -113,6 +113,7 @@ test('candidate identity v2 is stable across tracking parameters, aliases, and r
   assert.equal(left.matchKeys.officialRequisition, right.matchKeys.officialRequisition);
   assert.equal(left.matchKeys.officialUrl, right.matchKeys.officialUrl);
   assert.ok(left.labels.company.normalizedAliases.includes('example systems inc'));
+  assert.equal(left.candidateId, identity({ officialUrl: 'https://jobs.example.test./openings/123?team=cloud' }).candidateId);
 });
 
 test('terminal-first preflight blocks receipt evidence and cannot collision-review it away', () => {
@@ -267,4 +268,22 @@ test('artifact provenance hashes actual files and binds resume, form, answers, a
   assert.equal(manifest.answerSnapshotSha256, candidate.answerSnapshotSha);
   assert.equal(manifest.candidateId, candidate.candidateId);
   assert.equal(manifest.artifacts.find((item) => item.kind === 'resume').byteLength, resumeBytes.byteLength);
+});
+
+test('stored answer snapshots reject empty, never-store, and inferred legal answers', () => {
+  for (const change of [{ value: '' }, { value: null }, { automationPolicy: 'never-store' },
+    { sensitivity: 'legal-material', source: 'approved-resume' }]) {
+    assert.throws(() => buildCandidateAnswerSnapshot({
+      application: application(), createdAt: NOW,
+      answerDocument: { schemaVersion: 1, answers: [{
+        questionId: 'demo.answer', questionRevision: 1, answerScope: 'profile', value: 'yes',
+        source: 'user-explicit', sensitivity: 'ordinary', automationPolicy: 'auto-fill', verifiedAt: NOW,
+        ...change
+      }] },
+      questionSet: { reviewedBy: 'user', reviewedAt: NOW, questions: [{
+        prompt: 'Demo question?', semanticKey: 'demo.answer', decision: 'use-stored-answer',
+        answerQuestionId: 'demo.answer', answerQuestionRevision: 1
+      }] }
+    }), JSON.stringify(change));
+  }
 });

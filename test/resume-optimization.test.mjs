@@ -227,3 +227,15 @@ test('stopped best-version recheck refreshes score without resetting edit budget
   assert.equal(optimization.currentText, fixture.baselineText);
   assert.equal(optimization.stopReason, 'best-version-rechecked');
 });
+
+test('multiple approved Skills edits share a line without losing prior additions', () => {
+  const fixture = optimizationFixture();
+  fixture.policy.maxEditsPerRound = 5;
+  Object.assign(fixture.plan.edits[0], { kind: 'skills', action: 'append-skill',
+    sectionHeading: '## Skills', before: '- Tools: Python' });
+  const optimization = startResumeOptimization(fixture);
+  const result = optimizeFromScore({ optimization, application: fixture.application,
+    feedback: scoreFor(optimization, 50, ['CI/CD', 'Bash']), now: NOW });
+  assert.match(result.currentText, /Tools: Python, CI\/CD, Bash/);
+  assert.equal(result.appliedEditIds.length, 2);
+});

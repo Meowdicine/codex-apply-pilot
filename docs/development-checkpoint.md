@@ -40,3 +40,14 @@
 - QA/Gate 1 只能释放已评分、已冻结的 exact export；provenance manifest 继续绑定优化 checkpoint 与 parent draft。
 - 检索范围、官方资料、输入 schema 和验收矩阵见 `resume-score-optimization.md`。测试数据全为合成内容，未执行真实 Simplify 浏览器动作。
 - 本批次本地结果：95 项测试全部通过，87 个文本文件通过工作树隐私扫描，plugin manifest 和 4 个 skills 校验通过；图源/预览生成与空白检查通过。
+
+## 合并前安全复核
+
+- 回归测试首先复现 9 项失败，再修复实现；不以旧 CI success 替代当前分支复核。
+- 每个 full-auto 推进点重新核验 readiness、撤销/过期、精确域名和已验证 portal family；不信任调用者传入的 readiness boolean。
+- 每日上限按 UTC 对 index、实际 records 和 durable intent receipts 去重，所有模式的已消费 intent 都计入；缺失历史阻断，新 portal 不静默继承权限。
+- Consent 日期/boolean/cap、成熟度唯一性、baseline approval、unknown-account Hard Stop 均 fail closed。
+- 答案在写入与 readiness 时使用同样的类型/时间/metadata 校验；snapshot 复用还检查当前 catalog，不复用空值、never-store 或推断的法律答案。
+- DNS root dot 统一身份；多个已批准 Skills edit 可安全追加到同一行，不覆盖较早关键词，其他 exact-anchor edit 仍禁止自动重定位。
+- 所有新增测试仍只使用临时合成数据；未访问旧系统私人资料、真实账号、portal 或 Simplify UI。
+- 合并前本地验证：`npm run validate` 全部通过，107 项测试、88 个文本文件、plugin manifest 与 4 个 skills；图源同步和空白检查通过，历史扫描覆盖 129 个提交前可达 blob。旧测试夹具同步修正 enum-list 的值类型，未放宽生产校验。

@@ -16,6 +16,7 @@ function activeConsent(allowedDomains = ['example.test']) {
   return {
     fullAutoConsent: {
       active: true,
+      dailySubmitCap: 5,
       allowedDomains,
       validFrom: new Date(Date.now() - 60_000).toISOString(),
       expiresAt: new Date(Date.now() + 60_000).toISOString(),
@@ -24,10 +25,10 @@ function activeConsent(allowedDomains = ['example.test']) {
   };
 }
 
-test('domain allowlist accepts exact hosts and subdomains but rejects lookalikes', () => {
+test('domain allowlist accepts exact hosts but rejects implicit subdomains and lookalikes', () => {
   const consent = activeConsent(['jobs.example.test']);
   assert.doesNotThrow(() => assertDomainAllowed(consent, 'https://jobs.example.test/opening/1'));
-  assert.doesNotThrow(() => assertDomainAllowed(consent, 'https://ca.jobs.example.test/opening/1'));
+  assert.throws(() => assertDomainAllowed(consent, 'https://ca.jobs.example.test/opening/1'), /不在 full-auto allowlist/);
   assert.throws(
     () => assertDomainAllowed(consent, 'https://jobs.example.test.evil.invalid/opening/1'),
     /不在 full-auto allowlist/

@@ -27,7 +27,7 @@
 |---|---|
 | 中文优先、本地优先、无默认 telemetry | 已有 |
 | semi-auto 双 Gate | 已有 |
-| full-auto maturity、时限 consent、domain allowlist、daily cap | 已有 |
+| full-auto maturity、时限 consent、domain allowlist、daily cap | 已有；合并前复核补齐逐步授权重检、UTC intent cap、显式子域和成熟度去重 |
 | CAPTCHA/2FA/OAuth/payment/contract/unsupported fact Hard Stop | 已有 |
 | candidate ID、state version、submit intent 与最多一次 final click | 已有 |
 | immutable resume baseline 与 artifact SHA-256 | 已有 |

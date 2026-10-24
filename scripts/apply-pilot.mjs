@@ -31,7 +31,7 @@ import {
   runInteractiveQuestionnaire,
   upsertAnswer
 } from './lib/questionnaire.mjs';
-import { assertDomainAllowed, evaluateFullAutoReadiness } from './lib/readiness.mjs';
+import { assertDailySubmitCapacity, assertDomainAllowed, assertKnownPortal, evaluateFullAutoReadiness } from './lib/readiness.mjs';
 import { optimizationReleaseBinding, runResumeCommand } from './lib/resume-commands.mjs';
 import {
   applyCollisionReview,
@@ -110,15 +110,28 @@ async function ensureInitialized(stateDir) {
 }
 
 async function loadReadinessInputs(paths) {
-  const [policy, catalog, answers, consent, resumeCatalog, applicationIndex] = await Promise.all([
+  const [policy, catalog, answers, consent, resumeCatalog, applicationIndex, records, receipts] = await Promise.all([
     readJson(paths.policy),
     loadQuestionnaire(path.join(projectRoot, 'config', 'questionnaire.zh-CN.json')),
     readJson(paths.answers),
     readJson(paths.consent),
     readJson(paths.resumeCatalog),
-    readJson(paths.applicationsIndex)
+    readJson(paths.applicationsIndex),
+    loadApplicationRecords(paths),
+    readJsonLines(paths.receiptLedger)
   ]);
-  return { policy, catalog, answers, consent, resumeCatalog, applicationIndex };
+  return { policy, catalog, answers, consent, resumeCatalog,
+    applicationIndex: { ...applicationIndex, applications: [...applicationIndex.applications, ...records] }, receipts };
+}
+
+async function assertFullAutoAuthority(paths, application, { submitCapacity = false } = {}) {
+  if (application.mode !== 'full-auto') return;
+  const inputs = await loadReadinessInputs(paths);
+  const readiness = evaluateFullAutoReadiness(inputs);
+  if (!readiness.ready) throw new Error(`全自动准入未通过：${readiness.checks.filter((entry) => !entry.passed).map((entry) => entry.id).join(', ')}`);
+  assertDomainAllowed(inputs.consent, application.officialUrl);
+  assertKnownPortal(inputs, application);
+  if (submitCapacity) assertDailySubmitCapacity(inputs);
 }
 
 async function readEventPayload(options) {
@@ -378,12 +391,7 @@ async function commandNewApplication(stateDir, options) {
   if (index.applications.some((item) => item.candidateId === application.candidateId)) {
     throw new Error(`候选已存在，拒绝重复创建：${application.candidateId}`);
   }
-  if (mode === 'full-auto') {
-    const readinessInputs = await loadReadinessInputs(paths);
-    const readiness = evaluateFullAutoReadiness(readinessInputs);
-    if (!readiness.ready) throw new Error('全自动准入未通过，不能创建 full-auto application');
-    assertDomainAllowed(readinessInputs.consent, application.officialUrl);
-  }
+  await assertFullAutoAuthority(paths, application);
   await saveApplication(paths, application);
   print({
     status: 'created',
@@ -405,12 +413,14 @@ async function commandSnapshotAnswers(stateDir, options) {
     options
   );
   assertPreflightSafe(preflight);
+  await assertFullAutoAuthority(paths, application);
   await persistPreflight(paths, preflight);
-  const [answerDocument, questionSet] = await Promise.all([
+  const [answerDocument, questionSet, catalog] = await Promise.all([
     readJson(paths.answers),
-    readJson(path.resolve(requireOption(options, 'questions-file')))
+    readJson(path.resolve(requireOption(options, 'questions-file'))),
+    loadQuestionnaire(path.join(projectRoot, 'config', 'questionnaire.zh-CN.json'))
   ]);
-  const snapshot = buildCandidateAnswerSnapshot({ application, answerDocument, questionSet });
+  const snapshot = buildCandidateAnswerSnapshot({ application, answerDocument, questionSet, catalog });
   if (!snapshot.readyForStaging) {
     throw new Error(`candidate answer snapshot 尚有未解决问题：${snapshot.unresolved.map((item) => item.semanticKey).join(', ')}`);
   }
@@ -448,6 +458,7 @@ async function commandLockArtifacts(stateDir, options) {
     options
   );
   assertPreflightSafe(preflight);
+  await assertFullAutoAuthority(paths, application);
   await persistPreflight(paths, preflight);
   const artifactsFile = path.resolve(requireOption(options, 'artifacts-file'));
   const artifactPlan = await readJson(artifactsFile);
@@ -517,8 +528,10 @@ async function commandEvent(stateDir, options) {
   if (preflightEvents.has(eventType)) {
     const preflight = await evaluatePreflight(paths, candidateIdentityFromRecord(current), current);
     assertPreflightSafe(preflight);
+    await assertFullAutoAuthority(paths, current, { submitCapacity: ['FORM_STAGED', 'SUBMIT_INTENT'].includes(eventType) });
     await persistPreflight(paths, preflight);
     payload = { ...payload, preflightReportSha256: preflight.preflightReportSha256 };
+    if (current.mode === 'full-auto') payload.fullAutoReadinessPassed = true;
   }
   if (current.schemaVersion >= 2 && ['FORM_STAGED', 'SUBMIT_APPROVED', 'SUBMIT_INTENT'].includes(eventType)) {
     await validateLockedArtifacts(paths, current);
@@ -631,6 +644,7 @@ async function main() {
         preflight: async (application) => {
           const report = await evaluatePreflight(paths, candidateIdentityFromRecord(application), application);
           assertPreflightSafe(report);
+          await assertFullAutoAuthority(paths, application);
           await persistPreflight(paths, report);
         }
       }), true);

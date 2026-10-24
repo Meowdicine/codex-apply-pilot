@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import { rejectSecretValue } from './questionnaire.mjs';
+import { flattenQuestions, isAnswerCurrent, rejectSecretValue } from './questionnaire.mjs';
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/i;
 const TERMINAL_STATES = new Set([
@@ -131,7 +131,7 @@ export function normalizeOfficialUrl(rawUrl) {
   if (url.protocol !== 'https:') throw new Error('officialUrl 必须使用 https://');
   if (url.username || url.password) throw new Error('officialUrl 不得包含用户名或密码');
   url.hash = '';
-  url.hostname = url.hostname.toLowerCase();
+  url.hostname = url.hostname.toLowerCase().replace(/\.+$/, '');
   url.pathname = url.pathname.replace(/\/{2,}/g, '/');
   if (url.pathname.length > 1) url.pathname = url.pathname.replace(/\/+$/, '');
 
@@ -503,6 +503,7 @@ export function buildCandidateAnswerSnapshot({
   application,
   answerDocument,
   questionSet,
+  catalog = null,
   createdAt = new Date().toISOString()
 }) {
   if (!application?.candidateId) throw new Error('candidate answer snapshot 缺少 application');
@@ -529,6 +530,15 @@ export function buildCandidateAnswerSnapshot({
     if (item.decision === 'use-stored-answer') {
       const stored = answers.get(item.answerQuestionId);
       if (!stored) throw new Error(`${semanticKey} 缺少已验证答案 ${item.answerQuestionId || ''}`.trim());
+      if (stored.value === null || stored.value === undefined || stored.value === ''
+        || (typeof stored.value === 'object' && !Object.keys(stored.value).length)
+        || stored.automationPolicy === 'never-store') throw new Error(`${semanticKey} 的已存答案不可复用`);
+      if (['protected', 'legal-material'].includes(stored.sensitivity)
+        && !['user-explicit', 'prefer-not-to-answer'].includes(stored.source)) throw new Error(`${semanticKey} 缺少用户明确回答`);
+      if (catalog) {
+        const definition = flattenQuestions(catalog).find((entry) => entry.id === stored.questionId);
+        if (!definition || !isAnswerCurrent(definition, stored, created.valueOf())) throw new Error(`${semanticKey} 的答案不符合当前 catalog 或已过期`);
+      }
       if (!Number.isInteger(item.answerQuestionRevision) || item.answerQuestionRevision < 1
         || stored.questionRevision !== item.answerQuestionRevision) {
         throw new Error(`${semanticKey} 的 answer question revision 已漂移`);

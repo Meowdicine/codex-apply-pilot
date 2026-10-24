@@ -218,6 +218,17 @@ function automaticSkillEdit(optimization, keyword) {
   return sectionContains(optimization.currentText, edit) ? edit : null;
 }
 
+function resolveApprovedEdit(content, edit) {
+  if (sectionContains(content, edit)) return edit;
+  // Only additive Skills edits may follow earlier additions to their exact anchor.
+  // Replacements and bullets retain their original, fail-closed exact-match rule.
+  if (edit.action !== 'append-skill') return null;
+  const lines = content.split(/\r?\n/).filter((line) => line.startsWith(`${edit.before.trimEnd()}, `));
+  if (lines.length !== 1) return null;
+  const resolved = { ...edit, before: lines[0], after: `${lines[0]}, ${edit.keyword}` };
+  return sectionContains(content, resolved) ? resolved : null;
+}
+
 function finish(optimization, reason) {
   optimization.status = 'stopped';
   optimization.stopReason = reason;
@@ -282,7 +293,8 @@ export function optimizeFromScore({ optimization, application, feedback, recheck
     if (containsKeyword(next.currentText, keyword)) { gaps.push({ keyword, reason: 'already-present-check-provider' }); continue; }
     if (!containsKeyword(next.jdText, keyword)) { gaps.push({ keyword, reason: 'not-in-official-jd' }); continue; }
     const matching = next.edits.filter((item) => normalized(item.keyword) === normalized(keyword) && !next.appliedEditIds.includes(item.id));
-    const edit = matching.find((item) => SUPPORTED.has(item.classification) && sectionContains(next.currentText, item))
+    const edit = matching.filter((item) => SUPPORTED.has(item.classification))
+      .map((item) => resolveApprovedEdit(next.currentText, item)).find(Boolean)
       || (matching.length === 0 ? automaticSkillEdit(next, keyword) : null);
     if (!edit) { gaps.push({ keyword, reason: matching.some((item) => SUPPORTED.has(item.classification)) ? 'anchor-conflict' : 'unsupported-or-unverified' }); continue; }
     if (changes.length >= next.policy.maxEditsPerRound) { gaps.push({ keyword, reason: 'round-edit-limit' }); continue; }

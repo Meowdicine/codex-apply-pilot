@@ -27,7 +27,7 @@
 | `verifiedAt` | 最近核验时间 |
 | `expiresAt` | 可选失效时间 |
 
-旧答案没有 `questionRevision` 或 `answerScope` 时仍可读取；下一次重答会补齐。`deterministic-normalization` 只允许格式转换，例如用户已确认日期的标准化；不能用它创造新事实。
+旧答案没有 `questionRevision` 或 `answerScope` 时仍可读取，但不计入 readiness，须重答补齐。已存值与新写入使用同样的类型、范围和秘密检查；非法日期、未来 verifiedAt、过期复核周期和 metadata 冲突均按缺失处理。显式 expiry 不能延长 catalog 的复核周期。`deterministic-normalization` 只允许格式转换，例如用户已确认日期的标准化；不能用它创造新事实。
 
 ## 问卷分组
 

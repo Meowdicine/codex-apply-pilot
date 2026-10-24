@@ -28,7 +28,7 @@ function past(minutes = 60) {
 function validValue(question) {
   if (question.id === 'automation.full-auto-opt-in') return 'yes';
   if (question.id === 'contact.phone') return '+15555550123';
-  if (question.allowedValues) return question.allowedValues[0];
+  if (question.allowedValues) return question.valueType === 'enum-list' ? [question.allowedValues[0]] : question.allowedValues[0];
   switch (question.valueType) {
     case 'date': return '2030-01-01';
     case 'date-month': return '2030-01';
@@ -65,6 +65,7 @@ function readyFixture(overrides = {}) {
       schemaVersion: 1,
       fullAutoConsent: {
         active: true,
+        dailySubmitCap: 5,
         allowedDomains: ['jobs.example.test'],
         validFrom: past(),
         expiresAt: future(),
@@ -80,17 +81,17 @@ function readyFixture(overrides = {}) {
     resumeCatalog: {
       schemaVersion: 1,
       baselines: [
-        { family: 'software', immutable: true, artifactSha256: 'a'.repeat(64) },
-        { family: 'data', immutable: true, artifactSha256: 'b'.repeat(64) },
-        { family: 'infrastructure', immutable: true, artifactSha256: 'c'.repeat(64) }
+        { family: 'software', immutable: true, artifactSha256: 'a'.repeat(64), approvedAt: past() },
+        { family: 'data', immutable: true, artifactSha256: 'b'.repeat(64), approvedAt: past() },
+        { family: 'infrastructure', immutable: true, artifactSha256: 'c'.repeat(64), approvedAt: past() }
       ]
     },
     applicationIndex: {
       schemaVersion: 1,
       applications: [
-        { mode: 'semi-auto', state: 'submitted-verified', portalFamily: 'greenhouse' },
-        { mode: 'semi-auto', state: 'submitted-verified', portalFamily: 'lever' },
-        { mode: 'semi-auto', state: 'submitted-verified', portalFamily: 'greenhouse' }
+        { applicationId: 'DEMO-READY-1', mode: 'semi-auto', state: 'submitted-verified', portalFamily: 'greenhouse' },
+        { applicationId: 'DEMO-READY-2', mode: 'semi-auto', state: 'submitted-verified', portalFamily: 'lever' },
+        { applicationId: 'DEMO-READY-3', mode: 'semi-auto', state: 'submitted-verified', portalFamily: 'greenhouse' }
       ]
     },
     ...overrides

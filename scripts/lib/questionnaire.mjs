@@ -177,6 +177,7 @@ export function parseAnswer(question, rawInput) {
         if (!Number.isInteger(value)) throw new Error('请输入有效整数');
         break;
       case 'number-list':
+        if (raw.split(',').some((item) => !item.trim())) throw new Error('数字列表不能包含空项');
         value = unique(raw.split(',').map((item) => Number(item.trim())));
         if (value.some((item) => !Number.isFinite(item))) throw new Error('请使用逗号分隔数字');
         break;
@@ -257,6 +258,34 @@ function parseKeyValueList(raw) {
 }
 
 function validateQuestionValue(question, value) {
+  if (value === null || value === undefined) throw new Error(`${question.id} 不能为空`);
+  const stringTypes = ['string', 'email', 'url', 'date', 'date-month', 'enum'];
+  if (stringTypes.includes(question.valueType) && (typeof value !== 'string' || !value.trim())) throw new Error('答案必须是非空字符串');
+  if (['number', 'integer'].includes(question.valueType) && (typeof value !== 'number' || !Number.isFinite(value))) throw new Error('答案必须是有效数字');
+  if (question.valueType === 'integer' && !Number.isInteger(value)) throw new Error('答案必须是整数');
+  if (['string-list', 'enum-list', 'number-list'].includes(question.valueType)) {
+    if (!Array.isArray(value) || !value.length) throw new Error('答案必须是非空列表');
+    if (question.valueType === 'number-list' ? value.some((item) => typeof item !== 'number' || !Number.isFinite(item))
+      : value.some((item) => typeof item !== 'string' || !item.trim())) throw new Error('列表项类型无效');
+  }
+  if (question.valueType === 'enum' && !question.allowedValues?.includes(value)) throw new Error('答案不在允许值中');
+  if (question.valueType === 'enum-list' && value.some((item) => !question.allowedValues?.includes(item))) throw new Error('答案不在允许值中');
+  if (question.valueType === 'key-value-list') {
+    if (!value || typeof value !== 'object' || Array.isArray(value) || !Object.keys(value).length
+      || Object.entries(value).some(([key, item]) => !key.trim() || ['__proto__', 'constructor', 'prototype'].includes(key)
+        || typeof item !== 'string' || !item.trim())) throw new Error('答案必须是非空 key=value 映射');
+  }
+  if (question.valueType === 'email' && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) throw new Error('请输入有效邮箱');
+  if (question.valueType === 'date') {
+    const parsed = new Date(`${value}T00:00:00Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(parsed.valueOf()) || parsed.toISOString().slice(0, 10) !== value) throw new Error('请输入真实存在的日历日期');
+  }
+  if (question.valueType === 'date-month' && !/^\d{4}-(0[1-9]|1[0-2])$/.test(value)) throw new Error('年月格式必须为 YYYY-MM');
+  if (question.valueType === 'url') {
+    const url = new URL(value);
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password) throw new Error('URL 必须是无凭据的 http 或 https');
+    if (question.validation?.httpsOnly && url.protocol !== 'https:') throw new Error('URL 必须使用 https');
+  }
   const validation = question.validation || {};
   if (typeof value === 'number') {
     if (validation.minimum !== undefined && value < validation.minimum) throw new Error(`最小值为 ${validation.minimum}`);
@@ -304,11 +333,19 @@ export function upsertAnswer(document, question, value, {
   expiresAt
 } = {}) {
   if (question.automationPolicy === 'never-store') throw new Error(`${question.id} 的值不得持久化`);
+  validateQuestionValue(question, value);
   rejectSecretValue(question.id, value);
   if (['legal-material', 'protected'].includes(question.sensitivity) && !explicit) {
     throw new Error(`${question.id} 属于 ${question.sensitivity}，必须使用 explicit=true 记录用户明确回答`);
   }
   if (value === null && question.requiredFor?.length) throw new Error(`${question.id} 不能为空`);
+  if (!['user-explicit', 'verified-document', 'approved-resume', 'deterministic-normalization', 'prefer-not-to-answer'].includes(source)) throw new Error('answer source 无效');
+  if (['legal-material', 'protected'].includes(question.sensitivity) && source !== 'user-explicit' && value !== 'prefer-not-to-answer') throw new Error('法律与 protected 答案必须来自用户明确回答');
+  if (!Number.isFinite(Date.parse(now))) throw new Error('verifiedAt 必须是有效时间');
+  const reviewExpiry = calculateExpiry(question, now);
+  let effectiveExpiry = expiresAt ?? reviewExpiry;
+  if (effectiveExpiry !== null && (!Number.isFinite(Date.parse(effectiveExpiry)) || Date.parse(effectiveExpiry) <= Date.parse(now))) throw new Error('expiresAt 必须是 verifiedAt 之后的有效时间');
+  if (reviewExpiry && (!effectiveExpiry || Date.parse(effectiveExpiry) > Date.parse(reviewExpiry))) effectiveExpiry = reviewExpiry;
 
   const answer = {
     questionId: question.id,
@@ -319,7 +356,7 @@ export function upsertAnswer(document, question, value, {
     sensitivity: question.sensitivity,
     automationPolicy: question.automationPolicy,
     verifiedAt: now,
-    expiresAt: expiresAt === undefined ? calculateExpiry(question, now) : expiresAt
+    expiresAt: effectiveExpiry
   };
   const index = document.answers.findIndex((item) => item.questionId === question.id);
   if (index >= 0) document.answers[index] = answer;
@@ -327,12 +364,19 @@ export function upsertAnswer(document, question, value, {
   return answer;
 }
 
-function isAnswerCurrent(question, answer) {
+export function isAnswerCurrent(question, answer, now = Date.now()) {
   if (!answer || answer.value === null || answer.value === '' || (Array.isArray(answer.value) && answer.value.length === 0)) return false;
-  if (answer.expiresAt && Date.parse(answer.expiresAt) <= Date.now()) return false;
-  if (answer.questionRevision && answer.questionRevision !== (question.revision || 1)) return false;
-  if (answer.answerScope && answer.answerScope !== question.scope) return false;
+  const verifiedAt = Date.parse(answer.verifiedAt);
+  if (!Number.isFinite(verifiedAt) || verifiedAt > now + 60000) return false;
+  if (answer.expiresAt !== null && answer.expiresAt !== undefined
+    && (!Number.isFinite(Date.parse(answer.expiresAt)) || Date.parse(answer.expiresAt) <= now)) return false;
+  if (Number.isFinite(question.reviewIntervalDays) && question.reviewIntervalDays > 0
+    && verifiedAt + question.reviewIntervalDays * 86400000 <= now) return false;
+  if (answer.questionRevision !== (question.revision || 1)) return false;
+  if (answer.answerScope !== question.scope || answer.sensitivity !== question.sensitivity
+    || answer.automationPolicy !== question.automationPolicy || answer.automationPolicy === 'never-store') return false;
   if (['legal-material', 'protected'].includes(question.sensitivity) && !['user-explicit', 'prefer-not-to-answer'].includes(answer.source)) return false;
+  try { validateQuestionValue(question, answer.value); rejectSecretValue(question.id, answer.value); } catch { return false; }
   return true;
 }
 
