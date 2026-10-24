@@ -22,6 +22,7 @@ description: 从用户批准的不可变基准创建并审计真实的候选专�
 
 - 做真实映射和候选副本时读取 [references/refinement.md](references/refinement.md)。
 - 做 artifact 检查或 review packet 时读取 [references/artifact-qa.md](references/artifact-qa.md)。
+- 根据 Simplify score 做有界自动关键词精修时读取 [references/score-optimization.md](references/score-optimization.md)。
 
 ## 不变量
 

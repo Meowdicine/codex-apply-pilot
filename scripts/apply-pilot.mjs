@@ -32,6 +32,7 @@ import {
   upsertAnswer
 } from './lib/questionnaire.mjs';
 import { assertDomainAllowed, evaluateFullAutoReadiness } from './lib/readiness.mjs';
+import { optimizationReleaseBinding, runResumeCommand } from './lib/resume-commands.mjs';
 import {
   applyCollisionReview,
   assertArtifactProvenanceManifest,
@@ -233,6 +234,10 @@ function helpText() {
       [--collision-review-file PATH]
   apply-pilot snapshot-answers --application APPLICATION_ID --questions-file PATH
   apply-pilot lock-artifacts --application APPLICATION_ID --artifacts-file PATH
+  apply-pilot resume-optimize-start --application APPLICATION_ID
+      --baseline-file PATH --jd-file PATH --plan-file PATH
+  apply-pilot resume-optimize-step --application APPLICATION_ID --feedback-file PATH --scored-artifact-file PATH [--recheck]
+  apply-pilot resume-optimize-status --application APPLICATION_ID
   apply-pilot event --application APPLICATION_ID --type EVENT_TYPE
       --expected-version N [--payload-json JSON|--payload-file PATH] [--idempotency-key KEY]
   apply-pilot manifest --application APPLICATION_ID [--button-label LABEL] [--expires-minutes N]
@@ -518,6 +523,9 @@ async function commandEvent(stateDir, options) {
   if (current.schemaVersion >= 2 && ['FORM_STAGED', 'SUBMIT_APPROVED', 'SUBMIT_INTENT'].includes(eventType)) {
     await validateLockedArtifacts(paths, current);
   }
+  if (eventType === 'RESUME_READY') {
+    payload = { ...payload, resumeOptimization: await optimizationReleaseBinding(paths, current, payload) };
+  }
   const expectedStateVersion = parseInteger(requireOption(options, 'expected-version'), 'expected-version');
   const event = {
     type: eventType,
@@ -614,6 +622,20 @@ async function main() {
     case 'lock-artifacts':
       await commandLockArtifacts(stateDir, options);
       break;
+    case 'resume-optimize-start':
+    case 'resume-optimize-step':
+    case 'resume-optimize-status': {
+      const paths = await ensureInitialized(stateDir);
+      print(await runResumeCommand({
+        command, paths, options,
+        preflight: async (application) => {
+          const report = await evaluatePreflight(paths, candidateIdentityFromRecord(application), application);
+          assertPreflightSafe(report);
+          await persistPreflight(paths, report);
+        }
+      }), true);
+      break;
+    }
     case 'event':
       await commandEvent(stateDir, options);
       break;

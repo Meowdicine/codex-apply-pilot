@@ -160,6 +160,13 @@ export function transition(application, event, options = {}) {
       requireState(next, ['resume-preparing'], event.type);
       requireHash(eventPayload.resumeVersionSha, 'resumeVersionSha');
       next.resumeVersionSha = eventPayload.resumeVersionSha.toLowerCase();
+      if (eventPayload.resumeOptimization) {
+        const binding = eventPayload.resumeOptimization;
+        requireHash(binding.sessionSha256, 'optimization sessionSha256');
+        requireHash(binding.optimizedDraftSha256, 'optimizedDraftSha256');
+        if (binding.qaPassed !== true || binding.minimumSatisfied !== true) throw new Error('optimization 必须通过 minimum 与 QA');
+        next.resumeOptimization = structuredClone(binding);
+      }
       if (next.mode === 'semi-auto') {
         next.state = 'resume-review-required';
       } else {

@@ -9,7 +9,7 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check scripts/apply-pilot.mjs && node --check scripts/lib/candidate-integrity.mjs && node --check scripts/lib/state.mjs && node --check scripts/lib/questionnaire.mjs && node --check scripts/lib/readiness.mjs && node --check scripts/generate-diagrams.mjs",
+    "check": "node --check scripts/apply-pilot.mjs && node --check scripts/lib/candidate-integrity.mjs && node --check scripts/lib/resume-optimization.mjs && node --check scripts/lib/resume-commands.mjs && node --check scripts/lib/state.mjs && node --check scripts/lib/questionnaire.mjs && node --check scripts/lib/readiness.mjs && node --check scripts/generate-diagrams.mjs",
     "diagrams": "node scripts/generate-diagrams.mjs",
     "privacy:scan": "node scripts/scan-repository.mjs",
     "privacy:history": "node scripts/scan-repository.mjs --history",

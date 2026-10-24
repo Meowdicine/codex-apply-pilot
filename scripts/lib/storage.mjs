@@ -165,6 +165,7 @@ export function statePaths(stateDir) {
     answerSnapshotsDir: path.join(root, 'snapshots', 'answers'),
     artifactManifestsDir: path.join(root, 'manifests', 'artifacts'),
     artifactBlobsDir: path.join(root, 'artifacts'),
+    optimizationDir: path.join(root, 'resume-optimization'),
     receiptLedger: path.join(root, 'receipts', 'events.jsonl')
   };
 }

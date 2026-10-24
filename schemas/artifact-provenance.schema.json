@@ -15,6 +15,7 @@
     "resumeVersionSha256": { "$ref": "#/$defs/sha256" },
     "formSnapshotSha256": { "$ref": "#/$defs/sha256" },
     "createdAt": { "type": "string", "format": "date-time" },
+    "optimizationSessionSha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
     "artifacts": {
       "type": "array",
       "minItems": 2,

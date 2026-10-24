@@ -51,6 +51,7 @@
 | canonical candidate identity v2 | official requisition/URL 强身份 + company/role/location alias collision review |
 | candidate answer snapshot | 冻结 exact prompt、semantic key、answer source/revision、expiry 与 review decision |
 | artifact provenance lock | 从实际 bytes 绑定 resume、form、可选文档、source baseline、candidate 与 answer snapshot |
+| score-guided keywords 优化 | 用户确认的官方评分 + 已批准 evidence 驱动本地自动补词/改写；有界迭代、最佳版本、source/export hash 与 QA/Gate 绑定 |
 
 ## 仍未迁移，建议按顺序实施
 

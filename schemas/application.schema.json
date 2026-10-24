@@ -24,6 +24,7 @@
     "formSnapshotSha": { "type": ["string", "null"] },
     "preflight": { "type": ["object", "null"] },
     "artifactLock": { "type": ["object", "null"] },
+    "resumeOptimization": { "type": ["object", "null"] },
     "terminal": { "type": "boolean" },
     "events": { "type": "array" }
   },

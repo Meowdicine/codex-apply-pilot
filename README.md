@@ -16,6 +16,7 @@
 - 全自动模式只在半自动经验、简历基准、浏览器测试和有限授权全部通过后开放。
 - 用候选 ID、状态版本、artifact hash 和一次性提交意图避免重复提交。
 - 在任何 tailoring、upload 或 browser action 前运行 terminal-first preflight，并用 identity v2、answer snapshot 与 provenance manifest 阻止候选混用。
+- 根据用户确认的 Simplify score，自动把有真实 evidence 的缺失 keywords 加入本地候选副本；支持有界迭代、最佳版本保留和 QA/Gate 绑定。
 
 ## 两种模式
 
@@ -72,6 +73,7 @@ node scripts/apply-pilot.mjs doctor --state-dir .apply-pilot --json
 
 - [系统架构与权威分层](docs/architecture.md)
 - [候选完整性链路](docs/candidate-integrity.md)
+- [Score-guided keywords 优化](docs/resume-score-optimization.md)
 - [双模式状态机](docs/diagrams/semi-vs-full-state-machine.svg)
 - [安全边界](docs/diagrams/security-boundaries.svg)
 - 可编辑图源位于 `docs/diagrams/*.drawio`

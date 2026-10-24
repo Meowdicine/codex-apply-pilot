@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Local resume score optimization checkpoint",
+  "type": "object",
+  "required": ["schemaVersion", "sessionType", "applicationId", "candidateId", "candidateIdentitySha256", "officialUrlSha256", "jdSha256", "baselineId", "baselineSha256", "boundStateVersion", "policy", "planSha256", "status", "iterationCount", "currentText", "currentResumeSha256", "observations", "rounds", "sessionSha256"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "sessionType": { "const": "resume-score-optimization" },
+    "applicationId": { "type": "string" },
+    "candidateId": { "$ref": "#/$defs/hash" },
+    "candidateIdentitySha256": { "$ref": "#/$defs/hash" },
+    "officialUrlSha256": { "$ref": "#/$defs/hash" },
+    "jdSha256": { "$ref": "#/$defs/hash" },
+    "baselineId": { "type": "string" },
+    "baselineSha256": { "$ref": "#/$defs/hash" },
+    "boundStateVersion": { "type": "integer", "minimum": 0 },
+    "policy": { "type": "object" },
+    "planSha256": { "$ref": "#/$defs/hash" },
+    "status": { "enum": ["awaiting-score", "stopped", "below-minimum"] },
+    "iterationCount": { "type": "integer", "minimum": 0, "maximum": 20 },
+    "currentText": { "type": "string" },
+    "currentResumeSha256": { "$ref": "#/$defs/hash" },
+    "observations": { "type": "array" },
+    "rounds": { "type": "array" },
+    "sessionSha256": { "$ref": "#/$defs/hash" }
+  },
+  "$defs": { "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" } },
+  "additionalProperties": true
+}

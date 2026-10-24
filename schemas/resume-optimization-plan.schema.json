@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Candidate-bound resume optimization plan",
+  "type": "object",
+  "required": ["schemaVersion", "candidateId", "officialUrlSha256", "jdSha256", "baselineId", "evidence", "edits"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "candidateId": { "$ref": "#/$defs/hash" },
+    "officialUrlSha256": { "$ref": "#/$defs/hash" },
+    "jdSha256": { "$ref": "#/$defs/hash" },
+    "baselineId": { "type": "string", "minLength": 1 },
+    "policy": {
+      "type": "object",
+      "properties": {
+        "metric": { "enum": ["keyword-match", "resume-score"] },
+        "targetScore": { "type": "number", "minimum": 0, "maximum": 100 },
+        "minimumScore": { "type": "number", "minimum": 0, "maximum": 100 },
+        "maxIterations": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "maxEditsPerRound": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "maxStagnantRounds": { "type": "integer", "minimum": 1, "maximum": 20 },
+        "minImprovement": { "type": "number", "minimum": 0, "maximum": 100 },
+        "maximumFeedbackAgeHours": { "type": "number", "exclusiveMinimum": 0, "maximum": 168 },
+        "onBelowMinimum": { "enum": ["park", "skip"] },
+        "autoAppendSkills": {
+          "type": "object",
+          "required": ["sectionHeading", "lineAnchor"],
+          "properties": { "sectionHeading": { "type": "string", "minLength": 1 }, "lineAnchor": { "type": "string", "minLength": 1 } },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "sourceType", "sourceSha256", "excerpt", "supportedKeywords", "approvedWording", "reviewedBy", "reviewedAt"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "sourceType": { "enum": ["approved-baseline", "verified-material", "user-confirmed"] },
+          "sourceFile": { "type": "string", "minLength": 1 },
+          "sourceSha256": { "$ref": "#/$defs/hash" },
+          "excerpt": { "type": "string", "minLength": 1 },
+          "supportedKeywords": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "approvedWording": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+          "semanticEquivalenceConfirmed": { "type": "boolean" },
+          "canListAsSkill": { "type": "boolean" },
+          "keywordCategory": { "enum": ["technical", "soft", "other"] },
+          "reviewedBy": { "const": "user" },
+          "reviewedAt": { "type": "string", "format": "date-time" },
+          "expiresAt": { "type": ["string", "null"], "format": "date-time" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "edits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "keyword", "classification"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "keyword": { "type": "string", "minLength": 1, "maxLength": 100 },
+          "classification": { "enum": ["direct", "equivalent", "soft-skill-supported", "unsupported", "unknown"] },
+          "evidenceId": { "type": "string" },
+          "kind": { "enum": ["skills", "experience", "project", "headline"] },
+          "action": { "enum": ["append-skill", "replace-text", "append-bullet"] },
+          "sectionHeading": { "type": "string" },
+          "before": { "type": "string" },
+          "after": { "type": "string" },
+          "allowNumericChange": { "type": "boolean" },
+          "reviewedBy": { "const": "user" },
+          "reviewedAt": { "type": "string", "format": "date-time" }
+        },
+        "allOf": [{
+          "if": { "properties": { "classification": { "enum": ["direct", "equivalent", "soft-skill-supported"] } } },
+          "then": { "required": ["evidenceId", "kind", "action", "sectionHeading", "before", "reviewedBy", "reviewedAt"] }
+        }],
+        "additionalProperties": false
+      }
+    }
+  },
+  "$defs": { "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" } },
+  "additionalProperties": false
+}

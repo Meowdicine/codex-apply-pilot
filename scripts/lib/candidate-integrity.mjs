@@ -650,6 +650,9 @@ export function assertArtifactProvenanceManifest(manifest, application) {
     throw new Error('artifact manifest content hash 不匹配');
   }
   const identity = candidateIdentityFromRecord(application);
+  if (application.resumeOptimization && manifest.optimizationSessionSha256 !== application.resumeOptimization.sessionSha256) {
+    throw new Error('artifact manifest optimization session binding 已漂移');
+  }
   if (manifest.applicationId !== application.applicationId || manifest.candidateId !== application.candidateId
     || manifest.candidateIdentitySha256 !== hashCanonical(identity)
     || manifest.officialUrlSha256 !== sha256(normalizeOfficialUrl(application.officialUrl))
@@ -714,6 +717,9 @@ export async function buildArtifactProvenanceManifest({
   if (!formSnapshot) throw new Error('artifact provenance 必须包含 form-snapshot');
   if (resume.contentSha256 !== application.resumeVersionSha) throw new Error('resume 文件 hash 与 application.resumeVersionSha 不匹配');
   if (!resume.source.sourceArtifactSha256) throw new Error('resume provenance 必须绑定 sourceArtifactSha256');
+  if (application.resumeOptimization && resume.source.sourceArtifactSha256 !== application.resumeOptimization.optimizedDraftSha256) {
+    throw new Error('resume provenance 必须来自已完成 QA 的 optimized draft');
+  }
   if (formSnapshot.source.type !== 'portal-form') throw new Error('form-snapshot sourceType 必须是 portal-form');
 
   entries.sort((left, right) => `${left.kind}|${left.logicalName}`.localeCompare(`${right.kind}|${right.logicalName}`));
@@ -728,6 +734,7 @@ export async function buildArtifactProvenanceManifest({
     answerSnapshotSha256: answerSnapshot.answerSnapshotSha256,
     resumeVersionSha256: resume.contentSha256,
     formSnapshotSha256: formSnapshot.contentSha256,
+    optimizationSessionSha256: application.resumeOptimization?.sessionSha256 || null,
     createdAt: created.toISOString(),
     artifacts: entries
   };

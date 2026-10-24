@@ -6,6 +6,17 @@
   "telemetry": false,
   "officialSourceRequired": true,
   "truthfulnessRequired": true,
+  "resumeOptimization": {
+    "metric": "keyword-match",
+    "targetScore": null,
+    "minimumScore": null,
+    "maxIterations": 3,
+    "maxEditsPerRound": 5,
+    "maxStagnantRounds": 2,
+    "minImprovement": 1,
+    "maximumFeedbackAgeHours": 24,
+    "onBelowMinimum": "park"
+  },
   "simplify": {
     "mode": "guided-official-ui-only",
     "allowDomAutomation": false,
