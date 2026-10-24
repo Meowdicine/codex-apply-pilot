@@ -1,6 +1,6 @@
 # 安全政策
 
-Codex Apply Pilot 目前是 private alpha。它会处理简历、申请答案和外部网站写入，因此任何自动化都应按高敏感度本地工具对待。
+Codex Apply Pilot 目前是公开仓库的 alpha。它会处理简历、申请答案和外部网站写入，因此任何自动化都应按高敏感度本地工具对待。
 
 ## 支持范围
 
@@ -29,6 +29,7 @@ Codex Apply Pilot 目前是 private alpha。它会处理简历、申请答案和
 
 ```bash
 npm run validate
+npm run privacy:history
 ```
 
 隐私扫描器会递归检查非二进制工作树文件，排除 `.git`、`node_modules` 和扫描器自身。它阻断常见 secrets、非示例邮箱/电话、本机绝对路径、私有身份片段以及疑似线程/申请 ID。额外的本地姓名或账号片段可通过分号分隔的 `APPLY_PILOT_PRIVATE_MARKERS` 环境变量加入扫描，变量值不会被写入仓库。
@@ -36,7 +37,7 @@ npm run validate
 发布前还应：
 
 1. 用 `git status --short` 和 `git ls-files` 人工确认发布范围。
-2. 使用 `gitleaks` 或同类工具扫描工作树及全部 Git 历史。
+2. 运行 `npm run privacy:history` 扫描所有本地 refs 可达的历史 blob；公开发布还应使用 `gitleaks` 或同类工具做独立 secrets 检查。
 3. 检查 `.drawio`、SVG、截图、PDF 和图片 metadata；文本扫描无法保证识别二进制文件中的隐私信息。
 4. 确认 CI 不含真实账号、浏览器 profile、凭据或 live portal 测试。
 5. 为 GitHub Actions 使用最小权限和固定 commit SHA。

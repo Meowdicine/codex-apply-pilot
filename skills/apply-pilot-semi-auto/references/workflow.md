@@ -12,6 +12,8 @@ discovered
   RESUME_READY -> resume-review-required
   RESUME_APPROVED -> account-registration-required
   ACCOUNT_READY -> form-staging
+  ANSWER_SNAPSHOT_LOCKED -> form-staging
+  ARTIFACT_PROVENANCE_LOCKED -> form-staging
   FORM_STAGED -> submit-review-required
   SUBMIT_APPROVED -> submit-authorized
   SUBMIT_INTENT -> submitting
@@ -19,6 +21,8 @@ discovered
 ```
 
 每个 event 都要求当前 `expectedStateVersion` 与唯一 idempotency key。每次写入后重新读取 state。
+
+在 `RESUME_STARTED`、upload、form/browser staging、Gate 或 submit event 前先运行 terminal-first preflight。任何 submit intent、terminal receipt、unknown no-repeat 或 exact duplicate 立即停止；只有纯 collision finding 可以通过绑定当前 report hash 的用户 review 解除。
 
 ## 账号注册
 
@@ -31,6 +35,8 @@ discovered
 - 当前 state 为 `account-registration-required`；
 - 用户确认适用于这个 portal/account；
 - 没有 active security challenge。
+
+进入 `FORM_STAGED` 前先锁定 candidate answer snapshot，再从实际文件 bytes 锁定 artifact provenance manifest。两者必须绑定同一 candidate identity、official URL、resume hash 与 form snapshot hash。
 
 ## 其他结果
 

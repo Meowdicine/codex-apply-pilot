@@ -36,4 +36,4 @@ Consent 只授权限制范围内受支持的申请动作。它不授权抓取、
 
 ## Exactly once
 
-最终动作前立即核验同一 candidate、official host、resume hash、form hash、state version、active consent 与 remaining cap。持久化 intent、只增加一次 attempt count，然后最多点击一次。只有官方证据记录成功；歧义为 no-repeat。
+最终动作前立即核验同一 candidate、official host、resume hash、answer snapshot、artifact provenance manifest、form hash、state version、active consent 与 remaining cap。CLI 会重新核验 frozen bytes；上传必须使用 runtime 中的冻结副本。持久化 intent、只增加一次 attempt count，然后最多点击一次。只有官方证据记录成功；歧义为 no-repeat。

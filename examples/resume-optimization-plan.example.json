@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "candidateId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "officialUrlSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "jdSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "baselineId": "demo-reference-v1",
+  "policy": {
+    "metric": "keyword-match",
+    "targetScore": 85,
+    "minimumScore": 70,
+    "maxIterations": 3,
+    "maxEditsPerRound": 3,
+    "maxStagnantRounds": 2,
+    "onBelowMinimum": "park",
+    "autoAppendSkills": { "sectionHeading": "## Skills", "lineAnchor": "- Tools: Python" }
+  },
+  "evidence": [
+    {
+      "id": "demo-coursework-pipeline",
+      "sourceType": "verified-material",
+      "sourceFile": "./verified-experience.md",
+      "sourceSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "excerpt": "Built CI/CD pipelines in a coursework project.",
+      "supportedKeywords": ["CI/CD"],
+      "approvedWording": ["- Built CI/CD pipelines in a coursework project."],
+      "canListAsSkill": true,
+      "keywordCategory": "technical",
+      "reviewedBy": "user",
+      "reviewedAt": "2026-01-15T00:00:00.000Z"
+    }
+  ],
+  "edits": []
+}

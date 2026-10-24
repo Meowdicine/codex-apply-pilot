@@ -16,7 +16,13 @@ function create(mode = 'semi-auto') {
     officialUrl: 'https://jobs.example.test/openings/data-intern',
     employerJobId: 'DATA-1',
     portalFamily: 'lever',
-    mode
+    mode,
+    preflight: {
+      decision: 'proceed',
+      safeToProceed: true,
+      reportSha256: 'e'.repeat(64),
+      checkedAt: '2026-01-01T00:00:00.000Z'
+    }
   });
 }
 
@@ -140,4 +146,25 @@ test('full-auto still uses the same at-most-once submit-intent protocol', () => 
   });
   assert.equal(submitting.submitAttemptCount, 1);
   assert.equal(submitting.state, 'submitting');
+});
+
+test('expired Gate 2 cannot authorize a later submit intent', () => {
+  const authorized = authorizeSemiAutoSubmit();
+  authorized.gate2.expiresAt = new Date(Date.now() - 1000).toISOString();
+  assert.throws(() => applyEvent(authorized, 'SUBMIT_INTENT', {
+    candidateId: authorized.candidateId,
+    resumeVersionSha: authorized.resumeVersionSha,
+    formSnapshotSha: authorized.formSnapshotSha
+  }), /已过期/);
+});
+
+test('changing both form state and Gate 2 cannot bypass the provenance lock', () => {
+  const authorized = authorizeSemiAutoSubmit();
+  authorized.formSnapshotSha = SHA_C;
+  authorized.gate2.formSnapshotSha = SHA_C;
+  assert.throws(() => applyEvent(authorized, 'SUBMIT_INTENT', {
+    candidateId: authorized.candidateId,
+    resumeVersionSha: authorized.resumeVersionSha,
+    formSnapshotSha: SHA_C
+  }), /provenance lock.*漂移/);
 });

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "provider": "simplify",
+  "metric": "keyword-match",
+  "confirmedBy": "user",
+  "candidateId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "officialUrlSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "jdSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+  "resumeSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "scoredArtifactSha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "sourceTextVerified": true,
+  "observedAt": "2026-01-15T00:00:00.000Z",
+  "saveComplete": true,
+  "recalculationComplete": true,
+  "score": 65,
+  "missingKeywords": ["CI/CD", "Kubernetes"]
+}

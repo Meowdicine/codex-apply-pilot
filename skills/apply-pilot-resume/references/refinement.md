@@ -39,3 +39,5 @@
 - 遵循用户当前 layout policy；不得把私有维护者格式偏好变成公共默认。
 - 工具报告 match score 时，记录准确候选版本和时间戳。target/minimum 是用户 policy，不是普适保证。
 - 真实、有界精修仍达不到配置最低值时，按 policy 停止或跳过；绝不用虚构内容挽救分数。
+
+本地 score-guided engine、exact feedback binding、自动 technical Skills 补词和迭代停止条件见 [score-optimization.md](score-optimization.md)。它从真实已批准 evidence 生成改动，并要求每个新版本重新取得用户确认的官方 UI score。

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "用户确认的 Simplify score feedback",
+  "type": "object",
+  "required": ["schemaVersion", "provider", "metric", "confirmedBy", "candidateId", "officialUrlSha256", "jdSha256", "resumeSha256", "scoredArtifactSha256", "sourceTextVerified", "observedAt", "saveComplete", "recalculationComplete", "score", "missingKeywords"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "provider": { "const": "simplify" },
+    "metric": { "enum": ["keyword-match", "resume-score"] },
+    "confirmedBy": { "const": "user" },
+    "candidateId": { "$ref": "#/$defs/hash" },
+    "officialUrlSha256": { "$ref": "#/$defs/hash" },
+    "jdSha256": { "$ref": "#/$defs/hash" },
+    "resumeSha256": { "$ref": "#/$defs/hash" },
+    "scoredArtifactSha256": { "$ref": "#/$defs/hash" },
+    "sourceTextVerified": { "const": true },
+    "observedAt": { "type": "string", "format": "date-time" },
+    "saveComplete": { "const": true },
+    "recalculationComplete": { "const": true },
+    "score": { "type": "number", "minimum": 0, "maximum": 100 },
+    "missingKeywords": { "type": "array", "items": { "type": "string", "minLength": 1, "maxLength": 100 } }
+  },
+  "$defs": { "hash": { "type": "string", "pattern": "^[a-f0-9]{64}$" } },
+  "additionalProperties": false
+}

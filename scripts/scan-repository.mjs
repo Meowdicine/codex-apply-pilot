@@ -16,6 +16,7 @@ const findings = [];
 const seenFindings = new Set();
 let textFileCount = 0;
 let binaryFileCount = 0;
+let historicalBlobCount = 0;
 
 function relative(filePath) {
   return path.relative(root, filePath).split(path.sep).join('/');
@@ -289,6 +290,7 @@ async function collectFiles(directory, files = []) {
   entries.sort((left, right) => left.name.localeCompare(right.name));
 
   for (const entry of entries) {
+    if (skippedDirectories.has(entry.name)) continue;
     const entryPath = path.join(directory, entry.name);
     if (entry.isDirectory()) {
       if (!skippedDirectories.has(entry.name)) await collectFiles(entryPath, files);
@@ -324,6 +326,26 @@ async function main() {
     scanText(filePath, buffer.toString('utf8'), markerHashes);
   }
 
+  if (process.argv.includes('--history')) {
+    const objects = execFileSync('git', ['rev-list', '--objects', '--all'], { cwd: root, encoding: 'utf8' })
+      .trim().split(/\r?\n/).filter(Boolean).map((line) => ({ sha: line.slice(0, 40), name: line.slice(41) }));
+    const metadata = execFileSync('git', ['cat-file', '--batch-check'], {
+      cwd: root, encoding: 'utf8', input: objects.map((item) => item.sha).join('\n') + '\n'
+    }).trim().split(/\r?\n/);
+    for (const [index, item] of objects.entries()) {
+      if (!metadata[index].split(' ').includes('blob')) continue;
+      const historyPath = path.join(root, 'history', item.sha, item.name || 'unnamed-blob');
+      const buffer = execFileSync('git', ['cat-file', 'blob', item.sha], { cwd: root, maxBuffer: maxTextBytes + 1 });
+      historicalBlobCount += 1;
+      if (!isProbablyText(buffer)) continue;
+      if (buffer.byteLength > maxTextBytes) {
+        addFinding(historyPath, 1, 'unscanned-large-file', '历史文本超过 8 MiB，未完成隐私扫描。');
+        continue;
+      }
+      scanText(historyPath, buffer.toString('utf8'), markerHashes);
+    }
+  }
+
   findings.sort((left, right) =>
     left.file.localeCompare(right.file) || left.line - right.line || left.kind.localeCompare(right.kind)
   );
@@ -338,7 +360,7 @@ async function main() {
     return;
   }
 
-  console.log(`隐私扫描通过：已检查 ${textFileCount} 个文本文件，跳过 ${binaryFileCount} 个二进制文件。`);
+  console.log(`隐私扫描通过：已检查 ${textFileCount} 个文本文件，跳过 ${binaryFileCount} 个二进制文件，历史 blob ${historicalBlobCount} 个。`);
 }
 
 main().catch((error) => {

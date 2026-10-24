@@ -5,20 +5,34 @@
   "type": "object",
   "required": ["schemaVersion", "applicationId", "candidateId", "company", "role", "officialUrl", "mode", "state", "stateVersion", "submitAttemptCount", "events"],
   "properties": {
-    "schemaVersion": { "const": 1 },
+    "schemaVersion": { "enum": [1, 2] },
     "applicationId": { "type": "string", "minLength": 8 },
     "candidateId": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "candidateIdentity": { "$ref": "candidate-identity.schema.json" },
     "company": { "type": "string", "minLength": 1 },
     "role": { "type": "string", "minLength": 1 },
+    "location": { "type": ["string", "null"] },
+    "employerJobId": { "type": ["string", "null"] },
     "officialUrl": { "type": "string", "pattern": "^https://" },
     "mode": { "enum": ["semi-auto", "full-auto"] },
     "state": { "type": "string", "minLength": 1 },
     "stateVersion": { "type": "integer", "minimum": 0 },
     "submitAttemptCount": { "type": "integer", "minimum": 0, "maximum": 1 },
     "resumeVersionSha": { "type": ["string", "null"] },
+    "answerSnapshotSha": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+    "artifactManifestSha": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
     "formSnapshotSha": { "type": ["string", "null"] },
+    "preflight": { "type": ["object", "null"] },
+    "artifactLock": { "type": ["object", "null"] },
+    "resumeOptimization": { "type": ["object", "null"] },
     "terminal": { "type": "boolean" },
     "events": { "type": "array" }
   },
+  "allOf": [
+    {
+      "if": { "properties": { "schemaVersion": { "const": 2 } }, "required": ["schemaVersion"] },
+      "then": { "required": ["candidateIdentity", "preflight", "answerSnapshotSha", "artifactManifestSha", "artifactLock"] }
+    }
+  ],
   "additionalProperties": true
 }

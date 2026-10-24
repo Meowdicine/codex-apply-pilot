@@ -22,12 +22,13 @@
 ## 收集步骤
 
 1. 加载当前 questionnaire catalog；不要在 chat 中另造问题清单。
-2. 按 catalog 顺序询问，或只询问所选模式缺失的必填项。
+2. 默认按 catalog 顺序询问所选模式的 required 与 recommended 项；`--required-only` 只补 Gate 必填项，`--all` 才遍历长尾目录。
 3. 准确展示允许的 enum 值。
-4. 持久化前验证日期、列表和数字范围。
-5. 记录 `verifiedAt`；可能变化的事实增加 `expiresAt`。
-6. 通过项目 CLI 或 atomic state writer 保存，不手工编辑并发状态。
-7. 宣布完成前重新读取并验证已保存文档。
+4. 仅在 `showWhen` 条件由当前已核验答案满足时显示依赖问题。
+5. 持久化前验证真实日历日期、email/HTTPS URL、列表、结构化 key/value 与数字范围。
+6. 记录 `questionRevision`、`answerScope` 与 `verifiedAt`；根据 catalog review interval 生成 `expiresAt`。
+7. 通过项目 CLI 或 atomic state writer 保存，不手工编辑并发状态。
+8. 宣布完成前重新读取并验证已保存文档。
 
 ## 秘密拒绝
 
@@ -42,4 +43,4 @@
 
 ## 完成回执
 
-只返回计数：总回答数、必填已答数、缺失 ID、过期 ID、各 sensitivity class 计数，以及 secret rejection 是否通过。不得回显 protected 或 personal 值。
+只返回计数：总回答数、必填已答数、缺失 ID、过期/revision mismatch ID、各 scope 与 sensitivity class 计数，以及 secret rejection 是否通过。不得回显 protected 或 personal 值。

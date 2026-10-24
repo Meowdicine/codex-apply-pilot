@@ -18,11 +18,12 @@ Codex 不得抓取、注入 JavaScript/DOM 变更、使用 hidden/private API、
 
 1. 确认官方 Simplify origin 和用户选择的可见登录账号。
 2. 用当前答案审计 personal/contact facts，不把值打印进普通 receipts。
-3. 审计 education、availability、work authorization 与 sponsorship；未解决的重要事实保持空白。
-4. 审计 links 与普通求职偏好。
+3. 审计 education、enrolment/co-op status、availability、work authorization 与 sponsorship；未解决的重要事实保持空白。
+4. 审计 links、skills、language/certification 与普通求职偏好；只使用当前 scope 与页面字段语义匹配的答案。
 5. 确认 voluntary demographic 默认值来自明确选择，通常为 `prefer-not-to-answer` 或 `ask-each-time`。
 6. 审计 Documents：只使用用户批准的当前 artifact，不选择含糊的“latest”文件。
 7. 创建或审计小型 baseline catalog；每份基准都应由用户批准、不可变、带 family label 且可 hash。
+8. 对 Common/Unique Questions 只把完全同文历史答案当作候选草稿；开放式答案必须重新核对 company、role、JD 与 truthfulness。
 
 ## 完成回执
 

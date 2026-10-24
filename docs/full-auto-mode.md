@@ -7,7 +7,7 @@
 默认政策要求全部通过：
 
 - 至少 3 次 `submitted-verified` 的半自动申请；
-- 至少 3 份 `immutable: true` 且 hash 有效的简历基准；
+- 至少 3 份 `immutable: true`、hash 不重复且有有效 `approvedAt` 的非候选简历基准；
 - 至少 3 个不同简历族；
 - 至少 2 个成功使用过的 portal family；
 - 全自动必填问卷完整且未过期；
@@ -15,7 +15,7 @@
 - 浏览器 smoke test 已通过；
 - exactly-once recovery test 已通过；
 - 至少 2 次 dry run；
-- 没有未解决的安全、unsupported-fact 或 unknown-submit Hard Stop；
+- 没有未解决的安全、unsupported-fact、unknown-account 或 unknown-submit Hard Stop；
 - 用户已开启、未撤销且未过期的时间限制授权；
 - 授权含至少一个明确域名 allowlist。
 
@@ -32,6 +32,12 @@
 - 本地能力证明，例如 credential store、browser smoke test 和 recovery test。
 
 授权不跨候选传播事实，不允许跨域名，也不允许绕过网站自身确认。新 portal 默认降级半自动；若网站条款不允许自动化，则不执行。
+
+普通 `jobs.example.test` 只授权精确 host；如确需子域，必须显式填写 `*.jobs.example.test`，它覆盖 apex 与真正子域。不得填写 URL、端口或路径；目标 URL 必须为无凭据的 HTTPS。日期必须可解析，`active` 必须为 boolean，`dailySubmitCap` 必须为正整数。
+
+CLI 在创建候选、每个推进 event、answer snapshot、artifact lock 和简历优化写入前重新检查当前 readiness、consent、域名及已验证 portal family；不信任 event payload 中手填的 readiness boolean。授权失效只阻断后续推进，不阻止记录 Hard Stop、unknown、成功回执或 reconciliation。新 portal 会明确拒绝 full-auto，需改走半自动，不会静默改写既有候选模式。
+
+`FORM_STAGED` 与 `SUBMIT_INTENT` 还检查每日剩余容量。按 UTC 日期计算所有模式已消费的 intent（包括失败或未知结果），从 index、实际 application 文件和 receipt ledger 去重；同一 application 只计一次。历史缺失或时间无效时阻断，不把缺失记录当作零次。只在实际 `SUBMIT_INTENT` 持久化时消费容量，单写者 lock 防止并发超额。
 
 ## 状态路径
 

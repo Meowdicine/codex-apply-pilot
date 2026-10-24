@@ -9,10 +9,12 @@
   },
   "scripts": {
     "test": "node --test",
-    "check": "node --check scripts/apply-pilot.mjs && node --check scripts/lib/state.mjs && node --check scripts/lib/questionnaire.mjs && node --check scripts/lib/readiness.mjs && node --check scripts/generate-diagrams.mjs",
+    "check": "node --check scripts/apply-pilot.mjs && node --check scripts/lib/candidate-integrity.mjs && node --check scripts/lib/resume-optimization.mjs && node --check scripts/lib/resume-commands.mjs && node --check scripts/lib/state.mjs && node --check scripts/lib/questionnaire.mjs && node --check scripts/lib/readiness.mjs && node --check scripts/generate-diagrams.mjs",
     "diagrams": "node scripts/generate-diagrams.mjs",
     "privacy:scan": "node scripts/scan-repository.mjs",
-    "validate": "npm run check && npm test && npm run privacy:scan"
+    "privacy:history": "node scripts/scan-repository.mjs --history",
+    "plugin:validate": "node scripts/validate-plugin.mjs",
+    "validate": "npm run check && npm test && npm run privacy:scan && npm run plugin:validate"
   },
   "engines": {
     "node": ">=20"

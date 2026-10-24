@@ -1,4 +1,14 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
+import {
+  createCandidateIdV2,
+  createCandidateIdentity,
+  assertCandidateIdentity,
+  hashCanonical,
+  normalizeOfficialUrl,
+  sha256
+} from './candidate-integrity.mjs';
+
+export { hashCanonical, normalizeOfficialUrl, sha256 };
 
 export const TERMINAL_STATES = new Set([
   'submitted-verified',
@@ -13,39 +23,53 @@ export const TERMINAL_STATES = new Set([
 
 const AUTHORIZED_SUBMIT_STATES = new Set(['submit-authorized', 'submit-authorized-by-policy']);
 
-export function sha256(value) {
-  return createHash('sha256').update(String(value), 'utf8').digest('hex');
-}
-
-export function normalizeOfficialUrl(rawUrl) {
-  const url = new URL(rawUrl);
-  if (url.protocol !== 'https:') throw new Error('officialUrl 必须使用 https://');
-  url.hash = '';
-  for (const key of [...url.searchParams.keys()]) {
-    if (key.toLowerCase().startsWith('utm_')) url.searchParams.delete(key);
-  }
-  url.hostname = url.hostname.toLowerCase();
-  return url.toString();
-}
-
 export function createCandidateId({ officialUrl, employerJobId }) {
-  const normalized = normalizeOfficialUrl(officialUrl);
-  const url = new URL(normalized);
-  return sha256(`${url.hostname}|${employerJobId || 'no-job-id'}|${normalized}`);
+  return createCandidateIdV2({ officialUrl, employerJobId });
 }
 
-export function createApplication({ company, role, officialUrl, employerJobId = null, portalFamily = 'unknown', mode = 'semi-auto' }) {
+export function createApplication({
+  company,
+  role,
+  location = null,
+  officialUrl,
+  employerJobId = null,
+  portalFamily = 'unknown',
+  mode = 'semi-auto',
+  companyAliases = [],
+  roleAliases = [],
+  locationAliases = [],
+  candidateIdentity = null,
+  preflight = null
+}) {
   if (!company?.trim() || !role?.trim()) throw new Error('company 和 role 不能为空');
   if (!['semi-auto', 'full-auto'].includes(mode)) throw new Error('mode 必须是 semi-auto 或 full-auto');
   const normalizedUrl = normalizeOfficialUrl(officialUrl);
+  const identity = candidateIdentity || createCandidateIdentity({
+    company,
+    role,
+    location,
+    officialUrl: normalizedUrl,
+    employerJobId,
+    companyAliases,
+    roleAliases,
+    locationAliases
+  });
+  assertCandidateIdentity(identity, { company, role, location, officialUrl: normalizedUrl, employerJobId });
+  if (identity.identityVersion !== 2) throw new Error('新 application 必须使用 candidate identity v2');
+  if (identity.official.normalizedUrl !== normalizedUrl) throw new Error('candidate identity officialUrl 已漂移');
+  if (preflight && (!preflight.safeToProceed || !/^[a-f0-9]{64}$/i.test(preflight.reportSha256 || ''))) {
+    throw new Error('application preflight 必须 safeToProceed 并绑定 report SHA-256');
+  }
   const now = new Date().toISOString();
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     applicationId: randomUUID(),
-    candidateId: createCandidateId({ officialUrl: normalizedUrl, employerJobId }),
+    candidateId: identity.candidateId,
+    candidateIdentity: identity,
     company: company.trim(),
     role: role.trim(),
+    location: location?.trim() || null,
     employerJobId,
     officialUrl: normalizedUrl,
     portalFamily,
@@ -53,7 +77,11 @@ export function createApplication({ company, role, officialUrl, employerJobId = 
     state: 'discovered',
     stateVersion: 0,
     submitAttemptCount: 0,
+    preflight,
     resumeVersionSha: null,
+    answerSnapshotSha: null,
+    artifactManifestSha: null,
+    artifactLock: null,
     formSnapshotSha: null,
     gate1: null,
     gate2: null,
@@ -78,6 +106,20 @@ function requireHash(value, field) {
 
 function clone(value) {
   return structuredClone(value);
+}
+
+function assertArtifactLock(application) {
+  if (application.schemaVersion < 2) return;
+  const lock = application.artifactLock;
+  if (!lock || lock.candidateId !== application.candidateId
+    || lock.candidateIdentitySha256 !== hashCanonical(application.candidateIdentity)
+    || lock.officialUrlSha256 !== sha256(application.officialUrl)
+    || lock.resumeVersionSha !== application.resumeVersionSha
+    || lock.answerSnapshotSha !== application.answerSnapshotSha
+    || lock.artifactManifestSha !== application.artifactManifestSha
+    || (application.formSnapshotSha && lock.formSnapshotSha !== application.formSnapshotSha)) {
+    throw new Error('artifact provenance lock 已漂移');
+  }
 }
 
 export function transition(application, event, options = {}) {
@@ -109,12 +151,22 @@ export function transition(application, event, options = {}) {
       break;
     case 'RESUME_STARTED':
       requireState(next, ['eligible'], event.type);
+      if (next.schemaVersion >= 2 && (!next.preflight?.safeToProceed || !next.preflight?.reportSha256)) {
+        throw new Error('RESUME_STARTED 前必须通过 terminal-first preflight');
+      }
       next.state = 'resume-preparing';
       break;
     case 'RESUME_READY':
       requireState(next, ['resume-preparing'], event.type);
       requireHash(eventPayload.resumeVersionSha, 'resumeVersionSha');
       next.resumeVersionSha = eventPayload.resumeVersionSha.toLowerCase();
+      if (eventPayload.resumeOptimization) {
+        const binding = eventPayload.resumeOptimization;
+        requireHash(binding.sessionSha256, 'optimization sessionSha256');
+        requireHash(binding.optimizedDraftSha256, 'optimizedDraftSha256');
+        if (binding.qaPassed !== true || binding.minimumSatisfied !== true) throw new Error('optimization 必须通过 minimum 与 QA');
+        next.resumeOptimization = structuredClone(binding);
+      }
       if (next.mode === 'semi-auto') {
         next.state = 'resume-review-required';
       } else {
@@ -141,9 +193,53 @@ export function transition(application, event, options = {}) {
       }
       next.state = 'form-staging';
       break;
+    case 'ANSWER_SNAPSHOT_LOCKED':
+      requireState(next, ['form-staging'], event.type);
+      if (next.artifactLock) throw new Error('artifact provenance 已锁定，不能替换 answer snapshot');
+      if (eventPayload.candidateId !== next.candidateId) throw new Error('answer snapshot candidateId 不匹配');
+      requireHash(eventPayload.answerSnapshotSha, 'answerSnapshotSha');
+      if (eventPayload.candidateIdentitySha256 !== hashCanonical(next.candidateIdentity)) {
+        throw new Error('answer snapshot candidate identity 已漂移');
+      }
+      if (eventPayload.readyForStaging !== true) throw new Error('answer snapshot 尚未 readyForStaging');
+      next.answerSnapshotSha = eventPayload.answerSnapshotSha.toLowerCase();
+      break;
+    case 'ARTIFACT_PROVENANCE_LOCKED':
+      requireState(next, ['form-staging'], event.type);
+      if (!next.answerSnapshotSha) throw new Error('必须先锁定 candidate answer snapshot');
+      if (eventPayload.candidateId !== next.candidateId) throw new Error('artifact provenance candidateId 不匹配');
+      if (eventPayload.candidateIdentitySha256 !== hashCanonical(next.candidateIdentity)) {
+        throw new Error('artifact provenance candidate identity 已漂移');
+      }
+      if (eventPayload.officialUrlSha256 !== sha256(next.officialUrl)) throw new Error('artifact provenance officialUrl 已漂移');
+      if (eventPayload.resumeVersionSha !== next.resumeVersionSha) throw new Error('artifact provenance resumeVersionSha 已漂移');
+      if (eventPayload.answerSnapshotSha !== next.answerSnapshotSha) throw new Error('artifact provenance answerSnapshotSha 已漂移');
+      requireHash(eventPayload.formSnapshotSha, 'formSnapshotSha');
+      requireHash(eventPayload.artifactManifestSha, 'artifactManifestSha');
+      next.artifactManifestSha = eventPayload.artifactManifestSha.toLowerCase();
+      next.artifactLock = {
+        candidateId: next.candidateId,
+        candidateIdentitySha256: eventPayload.candidateIdentitySha256,
+        officialUrlSha256: eventPayload.officialUrlSha256,
+        resumeVersionSha: next.resumeVersionSha,
+        answerSnapshotSha: next.answerSnapshotSha,
+        formSnapshotSha: eventPayload.formSnapshotSha.toLowerCase(),
+        artifactManifestSha: next.artifactManifestSha,
+        lockedAt: new Date().toISOString()
+      };
+      break;
     case 'FORM_STAGED':
       requireState(next, ['form-staging'], event.type);
       requireHash(eventPayload.formSnapshotSha, 'formSnapshotSha');
+      if (next.schemaVersion >= 2) {
+        if (!next.answerSnapshotSha || !next.artifactManifestSha || !next.artifactLock) {
+          throw new Error('FORM_STAGED 前必须锁定 answer snapshot 与 artifact provenance');
+        }
+        assertArtifactLock(next);
+        if (eventPayload.formSnapshotSha.toLowerCase() !== next.artifactLock.formSnapshotSha) {
+          throw new Error('formSnapshotSha 与 artifact provenance lock 不匹配');
+        }
+      }
       next.formSnapshotSha = eventPayload.formSnapshotSha.toLowerCase();
       if (next.mode === 'semi-auto') {
         next.state = 'submit-review-required';
@@ -152,8 +248,11 @@ export function transition(application, event, options = {}) {
           candidateId: next.candidateId,
           officialUrlHash: sha256(next.officialUrl),
           resumeVersionSha: next.resumeVersionSha,
+          answerSnapshotSha: next.answerSnapshotSha,
+          artifactManifestSha: next.artifactManifestSha,
           formSnapshotSha: next.formSnapshotSha,
           finalButtonLabel: eventPayload.finalButtonLabel || 'Submit application',
+          stateVersion: next.stateVersion,
           boundAt: new Date().toISOString()
         };
         next.state = 'submit-authorized-by-policy';
@@ -162,12 +261,15 @@ export function transition(application, event, options = {}) {
     case 'SUBMIT_APPROVED': {
       requireState(next, ['submit-review-required'], event.type);
       const manifest = eventPayload.manifest;
+      assertArtifactLock(next);
       if (!manifest || manifest.candidateId !== next.candidateId) throw new Error('Gate 2 candidateId 不匹配');
       if (manifest.officialUrlHash !== sha256(next.officialUrl)) throw new Error('Gate 2 officialUrlHash 不匹配');
       if (manifest.resumeVersionSha !== next.resumeVersionSha) throw new Error('Gate 2 resumeVersionSha 不匹配');
+      if (manifest.answerSnapshotSha !== next.answerSnapshotSha) throw new Error('Gate 2 answerSnapshotSha 不匹配');
+      if (manifest.artifactManifestSha !== next.artifactManifestSha) throw new Error('Gate 2 artifactManifestSha 不匹配');
       if (manifest.formSnapshotSha !== next.formSnapshotSha) throw new Error('Gate 2 formSnapshotSha 不匹配');
       if (manifest.stateVersion !== next.stateVersion) throw new Error('Gate 2 stateVersion 已漂移');
-      if (!manifest.expiresAt || Date.parse(manifest.expiresAt) <= Date.now()) throw new Error('Gate 2 manifest 已过期');
+      if (!Number.isFinite(Date.parse(manifest.expiresAt)) || Date.parse(manifest.expiresAt) <= Date.now()) throw new Error('Gate 2 manifest 已过期');
       next.gate2 = { ...manifest, approvedAt: new Date().toISOString(), actor: 'user' };
       next.state = 'submit-authorized';
       break;
@@ -180,9 +282,16 @@ export function transition(application, event, options = {}) {
         if (!binding || binding.candidateId !== next.candidateId) throw new Error('提交授权的 candidateId 已漂移');
         if (binding.officialUrlHash !== sha256(next.officialUrl)) throw new Error('提交授权的 officialUrlHash 已漂移');
         if (binding.resumeVersionSha !== next.resumeVersionSha) throw new Error('提交授权的 resumeVersionSha 已漂移');
+        if (binding.answerSnapshotSha !== next.answerSnapshotSha) throw new Error('提交授权的 answerSnapshotSha 已漂移');
+        if (binding.artifactManifestSha !== next.artifactManifestSha) throw new Error('提交授权的 artifactManifestSha 已漂移');
         if (binding.formSnapshotSha !== next.formSnapshotSha) throw new Error('提交授权的 formSnapshotSha 已漂移');
         if ((eventPayload.finalButtonLabel || binding.finalButtonLabel) !== binding.finalButtonLabel) {
           throw new Error('提交授权的 finalButtonLabel 已漂移');
+        }
+        assertArtifactLock(next);
+        if (binding.stateVersion + 1 !== next.stateVersion) throw new Error('提交授权的 stateVersion 已漂移');
+        if (next.mode === 'semi-auto' && (!Number.isFinite(Date.parse(binding.expiresAt)) || Date.parse(binding.expiresAt) <= Date.now())) {
+          throw new Error('Gate 2 manifest 已过期');
         }
       }
       if (eventPayload.candidateId !== next.candidateId) throw new Error('submit candidateId 不匹配');
@@ -259,10 +368,14 @@ export function buildSubmitReviewManifest(application, { finalButtonLabel, expir
   if (application.state !== 'submit-review-required') throw new Error('只有 submit-review-required 可生成 Gate 2 manifest');
   requireHash(application.resumeVersionSha, 'resumeVersionSha');
   requireHash(application.formSnapshotSha, 'formSnapshotSha');
+  assertArtifactLock(application);
+  if (!Number.isFinite(expiresInMinutes) || expiresInMinutes <= 0) throw new Error('expiresInMinutes 必须为正数');
   return {
     candidateId: application.candidateId,
     officialUrlHash: sha256(application.officialUrl),
     resumeVersionSha: application.resumeVersionSha,
+    answerSnapshotSha: application.answerSnapshotSha,
+    artifactManifestSha: application.artifactManifestSha,
     formSnapshotSha: application.formSnapshotSha,
     finalButtonLabel: finalButtonLabel || 'Submit application',
     stateVersion: application.stateVersion,

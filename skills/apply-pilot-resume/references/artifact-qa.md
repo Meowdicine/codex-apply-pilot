@@ -19,6 +19,7 @@
 - fonts、symbols 与 links 一致呈现；
 - exported artifact 与已审计版本相同；
 - 最终 export 后计算 SHA-256；之后任何变更都使其失效。
+- Gate 1 后在 artifact provenance manifest 中记录 final resume hash、source baseline ID/hash 与 candidate identity；不要记录本地 absolute path。
 
 ## 非秘密 review packet
 
@@ -33,3 +34,5 @@
 - current state version 与准确 next authorization boundary。
 
 `semi-auto` 中用户批准准确 artifact hash。`full-auto` 中当前 readiness、allowlist 与 consent 必须授权同一 hash。artifact 变化后必须重新 QA 并取得新授权。
+
+进入 `FORM_STAGED` 前，manifest 还要绑定 candidate answer snapshot、form snapshot 以及可选 cover letter/transcript。CLI 必须读取实际 bytes 计算 hash；不得信任 filename、mtime 或调用者手填的 final hash。

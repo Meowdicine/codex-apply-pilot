@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Meowdicine/codex-apply-pilot/schemas/candidate-identity.schema.json",
+  "title": "Apply Pilot canonical candidate identity v2",
+  "type": "object",
+  "required": ["schemaVersion", "identityVersion", "candidateId", "official", "labels", "matchKeys"],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "identityVersion": { "const": 2 },
+    "candidateId": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "official": {
+      "type": "object",
+      "required": ["host", "normalizedUrl", "requisitionId", "normalizedRequisitionId"],
+      "properties": {
+        "host": { "type": "string", "minLength": 1 },
+        "normalizedUrl": { "type": "string", "pattern": "^https://" },
+        "requisitionId": { "type": ["string", "null"] },
+        "normalizedRequisitionId": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "labels": {
+      "type": "object",
+      "required": ["company", "role", "location"],
+      "additionalProperties": { "$ref": "#/$defs/label" }
+    },
+    "matchKeys": {
+      "type": "object",
+      "required": ["officialRequisition", "officialUrl", "context"],
+      "properties": {
+        "officialRequisition": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+        "officialUrl": { "$ref": "#/$defs/sha256" },
+        "context": { "$ref": "#/$defs/sha256" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "label": {
+      "type": "object",
+      "required": ["canonical", "aliases", "normalizedAliases"],
+      "properties": {
+        "canonical": { "type": ["string", "null"] },
+        "aliases": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "normalizedAliases": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

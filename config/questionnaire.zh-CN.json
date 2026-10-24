@@ -1,6 +1,8 @@
 {
   "schemaVersion": 1,
+  "catalogVersion": 2,
   "locale": "zh-CN",
+  "includes": ["questionnaire.extended.zh-CN.json"],
   "groups": [
     {
       "id": "identity",

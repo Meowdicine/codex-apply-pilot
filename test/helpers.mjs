@@ -1,8 +1,9 @@
-import { transition } from '../scripts/lib/state.mjs';
+import { hashCanonical, sha256, transition } from '../scripts/lib/state.mjs';
 
 export const SHA_A = 'a'.repeat(64);
 export const SHA_B = 'b'.repeat(64);
 export const SHA_C = 'c'.repeat(64);
+export const SHA_D = 'd'.repeat(64);
 
 export function applyEvent(application, type, payload = {}, extra = {}) {
   return transition(
@@ -32,6 +33,21 @@ export function advanceSemiAutoToSubmitReview(application) {
     resumeVersionSha: current.resumeVersionSha
   }, { actor: 'user' });
   current = applyEvent(current, 'ACCOUNT_READY', { userConfirmed: true }, { actor: 'user' });
+  current = applyEvent(current, 'ANSWER_SNAPSHOT_LOCKED', {
+    candidateId: current.candidateId,
+    candidateIdentitySha256: hashCanonical(current.candidateIdentity),
+    answerSnapshotSha: SHA_C,
+    readyForStaging: true
+  });
+  current = applyEvent(current, 'ARTIFACT_PROVENANCE_LOCKED', {
+    candidateId: current.candidateId,
+    candidateIdentitySha256: hashCanonical(current.candidateIdentity),
+    officialUrlSha256: sha256(current.officialUrl),
+    resumeVersionSha: current.resumeVersionSha,
+    answerSnapshotSha: current.answerSnapshotSha,
+    formSnapshotSha: SHA_B,
+    artifactManifestSha: SHA_D
+  });
   return applyEvent(current, 'FORM_STAGED', { formSnapshotSha: SHA_B });
 }
 
@@ -45,5 +61,20 @@ export function advanceFullAutoToSubmitAuthorized(application) {
     fullAutoReadinessPassed: true
   });
   current = applyEvent(current, 'ACCOUNT_READY');
+  current = applyEvent(current, 'ANSWER_SNAPSHOT_LOCKED', {
+    candidateId: current.candidateId,
+    candidateIdentitySha256: hashCanonical(current.candidateIdentity),
+    answerSnapshotSha: SHA_C,
+    readyForStaging: true
+  });
+  current = applyEvent(current, 'ARTIFACT_PROVENANCE_LOCKED', {
+    candidateId: current.candidateId,
+    candidateIdentitySha256: hashCanonical(current.candidateIdentity),
+    officialUrlSha256: sha256(current.officialUrl),
+    resumeVersionSha: current.resumeVersionSha,
+    answerSnapshotSha: current.answerSnapshotSha,
+    formSnapshotSha: SHA_B,
+    artifactManifestSha: SHA_D
+  });
   return applyEvent(current, 'FORM_STAGED', { formSnapshotSha: SHA_B });
 }
